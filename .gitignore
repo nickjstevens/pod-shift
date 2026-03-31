@@ -1,0 +1,12 @@
+# Generated agent and prompt scaffolding
+.github/agents/
+.github/prompts/
+
+# Local specification tooling state
+.specify/
+
+# Editor-specific settings
+.vscode/
+
+# macOS filesystem metadata
+.DS_Store
