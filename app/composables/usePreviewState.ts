@@ -41,8 +41,7 @@ export function usePreviewState() {
         ({
           errorCode: "temporary_resolution_failure",
           message: "Preview metadata could not be loaded.",
-          retryable: true,
-          feedbackLogged: false
+          retryable: true
         } satisfies ErrorResponse);
 
       return null;

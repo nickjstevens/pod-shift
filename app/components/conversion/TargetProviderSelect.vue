@@ -30,5 +30,9 @@ const props = defineProps<{
         {{ provider.displayName }}
       </option>
     </select>
+    <p class="field-help">
+      Choose where this show or episode should open. Picking the same app returns
+      a cleaned public link when one is available.
+    </p>
   </div>
 </template>

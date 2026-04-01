@@ -16,11 +16,11 @@
 ## What it does
 
 - Accepts supported public podcast links as input
-- Strips tracking parameters before matching or logging
+- Strips tracking parameters before matching or diagnostic logging
 - Converts show and episode links into the destination app the user selects
 - Preserves timestamps when the destination adapter supports them
 - Shows preview artwork when it can be resolved early
-- Logs only redacted failure signals for malformed, unsupported, low-confidence, and transient failures
+- Emits only redacted runtime diagnostics for malformed, unsupported, low-confidence, and transient failures
 
 ## Local setup
 
@@ -33,6 +33,13 @@ npx playwright install chromium webkit
 
 2. Create a local environment file from `.env.example`.
 
+```bash
+NUXT_PODCAST_INDEX_API_KEY=your-key
+NUXT_PODCAST_INDEX_API_SECRET=your-secret
+POD_SHIFT_USE_MOCK_CATALOG=false
+POD_SHIFT_REQUEST_TIMEOUT_MS=8000
+```
+
 3. Start the app:
 
 ```bash
@@ -40,6 +47,22 @@ npm run dev
 ```
 
 4. Open `http://localhost:3000`.
+
+Set `POD_SHIFT_USE_MOCK_CATALOG=true` only when you want the seeded local
+fixture catalog instead of live Podcast Index lookups.
+
+The supported local and hosted setup does not use `DATABASE_URL` or any
+separate database service.
+
+## Vercel deployment
+
+1. Link the repository to a Vercel project.
+2. Add these environment variables in Vercel Project Settings for Preview and Production:
+   - `NUXT_PODCAST_INDEX_API_KEY`
+   - `NUXT_PODCAST_INDEX_API_SECRET`
+   - `POD_SHIFT_USE_MOCK_CATALOG=false`
+   - `POD_SHIFT_REQUEST_TIMEOUT_MS=8000`
+3. Push a branch and verify the preview deployment converts a supported link and returns explicit failures without any database configuration.
 
 ## Test commands
 
@@ -51,9 +74,7 @@ npm run test:e2e
 
 ## Environment
 
-- `NUXT_PODCAST_INDEX_API_KEY`
-- `NUXT_PODCAST_INDEX_API_SECRET`
-- `DATABASE_URL`
-- `POD_SHIFT_USE_MOCK_CATALOG`
-- `POD_SHIFT_FEEDBACK_STORE`
-- `POD_SHIFT_REQUEST_TIMEOUT_MS`
+- `NUXT_PODCAST_INDEX_API_KEY`: required for live catalog lookup
+- `NUXT_PODCAST_INDEX_API_SECRET`: required for live catalog lookup
+- `POD_SHIFT_USE_MOCK_CATALOG`: defaults to `false`; set to `true` for seeded local fixtures only
+- `POD_SHIFT_REQUEST_TIMEOUT_MS`: optional request timeout override for catalog lookups

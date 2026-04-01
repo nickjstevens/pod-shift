@@ -56,6 +56,5 @@ export const convertSuccessResponseSchema = z.object({
 export const errorResponseSchema = z.object({
   errorCode: failureClassSchema,
   message: z.string(),
-  retryable: z.boolean(),
-  feedbackLogged: z.boolean()
+  retryable: z.boolean()
 });

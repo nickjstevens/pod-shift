@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import {
   listEnabledOutputProviders,
@@ -6,6 +6,10 @@ import {
 } from "../../../../server/services/adapters/provider-registry";
 
 describe("provider registry", () => {
+  beforeEach(() => {
+    process.env.POD_SHIFT_USE_MOCK_CATALOG = "false";
+  });
+
   it("keeps every supported input provider available as an output option", () => {
     const providers = listProviderCapabilities();
 

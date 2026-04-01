@@ -1,22 +1,53 @@
-import type { FeedbackEvent, FeedbackProviderId } from "../../../shared/types/conversion";
-import { getFeedbackEvents, insertFeedbackEvent, resetFeedbackEvents } from "../../utils/db";
+import { randomUUID } from "node:crypto";
 
-export async function persistFeedbackEvent(event: {
+import type { DiagnosticProviderId, RuntimeDiagnosticSignal } from "../../../shared/types/conversion";
+
+type RuntimeDiagnosticInput = {
   attemptId: string;
-  sourceProviderId: FeedbackProviderId;
-  targetProviderId: FeedbackProviderId;
-  failureClass: FeedbackEvent["failureClass"];
+  sourceProviderId: DiagnosticProviderId;
+  targetProviderId: DiagnosticProviderId;
+  failureClass: RuntimeDiagnosticSignal["failureClass"];
   normalizedIdentityHash: string;
-  confidenceBucket: FeedbackEvent["confidenceBucket"];
+  confidenceBucket: RuntimeDiagnosticSignal["confidenceBucket"];
   strippedTrackingKeys: string[];
-}) {
-  return insertFeedbackEvent(event);
+  sink: RuntimeDiagnosticSignal["sink"];
+};
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __podShiftRuntimeDiagnostics__: RuntimeDiagnosticSignal[] | undefined;
 }
 
-export function listPersistedFeedbackEvents() {
-  return getFeedbackEvents();
+function getRuntimeDiagnosticsStore() {
+  globalThis.__podShiftRuntimeDiagnostics__ ??= [];
+  return globalThis.__podShiftRuntimeDiagnostics__;
 }
 
-export function clearPersistedFeedbackEvents() {
-  resetFeedbackEvents();
+export async function emitRuntimeDiagnosticSignal(
+  input: RuntimeDiagnosticInput
+): Promise<RuntimeDiagnosticSignal> {
+  const diagnostic: RuntimeDiagnosticSignal = {
+    diagnosticSignalId: randomUUID(),
+    attemptId: input.attemptId,
+    sourceProviderId: input.sourceProviderId,
+    targetProviderId: input.targetProviderId,
+    failureClass: input.failureClass,
+    normalizedIdentityHash: input.normalizedIdentityHash,
+    confidenceBucket: input.confidenceBucket,
+    strippedTrackingKeys: input.strippedTrackingKeys,
+    emittedAt: new Date().toISOString(),
+    sink: input.sink
+  };
+
+  getRuntimeDiagnosticsStore().push(diagnostic);
+  console.warn("[pod-shift] runtime-diagnostic", diagnostic);
+  return diagnostic;
+}
+
+export function listRuntimeDiagnosticSignals() {
+  return [...getRuntimeDiagnosticsStore()];
+}
+
+export function clearRuntimeDiagnosticSignals() {
+  globalThis.__podShiftRuntimeDiagnostics__ = [];
 }

@@ -105,17 +105,15 @@ function submitForm(form: HTMLFormElement) {
           {{ isSubmitting ? "Converting..." : "Convert link" }}
         </button>
 
-        <p class="field-help">
-          No account required. Supported input providers are also exposed as output options.
-        </p>
+        <p class="field-help">No account required.</p>
       </form>
 
       <aside class="panel-card support-panel">
         <p class="eyebrow">Supported apps</p>
-        <h2>Output choices</h2>
+        <h2>Available destinations</h2>
         <p class="support-copy">
-          The app currently exposes the broad provider matrix from the registry and returns the most faithful
-          public destination link it can produce.
+          Pod Shift returns the closest public show or episode link it can verify
+          for the app you choose.
         </p>
 
         <ul class="provider-pill-list">

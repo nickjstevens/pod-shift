@@ -6,8 +6,7 @@ export class ApiError extends Error {
     public readonly statusCode: number,
     public readonly errorCode: FailureClass,
     message: string,
-    public readonly retryable = false,
-    public readonly feedbackLogged = false
+    public readonly retryable = false
   ) {
     super(message);
     this.name = "ApiError";
@@ -25,8 +24,7 @@ export function toErrorResponse(error: unknown): { statusCode: number; body: Err
       body: {
         errorCode: error.errorCode,
         message: error.message,
-        retryable: error.retryable,
-        feedbackLogged: error.feedbackLogged
+        retryable: error.retryable
       }
     };
   }
@@ -36,8 +34,7 @@ export function toErrorResponse(error: unknown): { statusCode: number; body: Err
     body: {
       errorCode: "temporary_resolution_failure",
       message: "A provider lookup is temporarily unavailable. Try again shortly.",
-      retryable: true,
-      feedbackLogged: false
+      retryable: true
     }
   };
 }

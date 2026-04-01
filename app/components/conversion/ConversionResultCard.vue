@@ -55,6 +55,10 @@ async function copyLink() {
     </div>
 
     <p class="result-card__message">{{ props.result.message }}</p>
+    <p class="result-card__meta">
+      This is the best public {{ props.result.contentKind }} link available for
+      {{ providerLabels[props.result.targetProvider] }}.
+    </p>
 
     <a
       class="result-card__url"

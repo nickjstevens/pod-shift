@@ -81,8 +81,7 @@ export function useConversionFlow(
         ({
           errorCode: "temporary_resolution_failure",
           message: "The conversion request could not be completed.",
-          retryable: true,
-          feedbackLogged: false
+          retryable: true
         } satisfies ErrorResponse);
     } finally {
       isSubmitting.value = false;

@@ -4,8 +4,7 @@
 
 - Node.js 20.x
 - npm 10+ (or an equivalent package manager if the implementation standardizes on one)
-- A PostgreSQL database for redacted feedback events
-- Podcast Index API credentials for canonical show and episode lookup
+- Podcast Index API credentials for canonical show and episode lookup in the default live-catalog mode
 
 ## Environment
 
@@ -14,7 +13,8 @@ Create a local environment file with the values required by the server routes:
 ```bash
 NUXT_PODCAST_INDEX_API_KEY=your-key
 NUXT_PODCAST_INDEX_API_SECRET=your-secret
-DATABASE_URL=postgres://user:password@localhost:5432/pod_shift
+POD_SHIFT_USE_MOCK_CATALOG=false
+POD_SHIFT_REQUEST_TIMEOUT_MS=8000
 ```
 
 ## Start the app
@@ -63,7 +63,7 @@ http://localhost:3000
 1. Paste a YouTube or YouTube Music podcast-related link.
 2. Confirm the app either returns a confident show or episode match or explains
    that no confident podcast match could be made.
-3. Verify that low-confidence failures are recorded as redacted feedback events.
+3. Verify that low-confidence failures emit only redacted runtime diagnostics.
 
 ### Responsive layout
 
@@ -88,10 +88,10 @@ Use the end-to-end suite to verify:
 - artwork display during matching
 - timestamp preservation and fallback
 - malformed, unsupported, and low-confidence failure handling
-- redacted feedback logging
+- redacted runtime diagnostics
 
 ## Implementation Notes
 
-- Validated on 2026-03-31 with targeted Vitest suites for direct conversion, provider expansion, preview, feedback logging, and provider-registry regressions.
-- Validated on 2026-03-31 with Playwright story suites for cross-app conversion, provider expansion, preview/artwork, and failure states across desktop Chromium and mobile Safari emulation.
-- The default local flow uses the seeded mock catalog. Podcast Index credentials are only needed when extending beyond the local fixture catalog.
+- Validated on 2026-04-01 with targeted Vitest suites for direct conversion, provider expansion, preview, runtime diagnostics, and provider-registry regressions.
+- Validated on 2026-04-01 with Playwright story suites for cross-app conversion, provider expansion, preview/artwork, failure states, and responsive regression checks across desktop Chromium and mobile Safari emulation.
+- The default local flow uses live catalog lookup. Set `POD_SHIFT_USE_MOCK_CATALOG=true` only when you need the seeded fixture catalog for deterministic offline work.

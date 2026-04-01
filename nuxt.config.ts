@@ -11,9 +11,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     podcastIndexApiKey: process.env.NUXT_PODCAST_INDEX_API_KEY ?? "",
     podcastIndexApiSecret: process.env.NUXT_PODCAST_INDEX_API_SECRET ?? "",
-    databaseUrl: process.env.DATABASE_URL ?? "",
-    useMockCatalog: process.env.POD_SHIFT_USE_MOCK_CATALOG ?? "true",
-    feedbackStore: process.env.POD_SHIFT_FEEDBACK_STORE ?? "memory",
+    useMockCatalog: process.env.POD_SHIFT_USE_MOCK_CATALOG ?? "false",
     requestTimeoutMs: process.env.POD_SHIFT_REQUEST_TIMEOUT_MS ?? "8000",
     public: {
       appName: "Pod Shift"

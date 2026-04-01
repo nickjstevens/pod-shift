@@ -10,11 +10,10 @@ export type ConversionState =
   | "matched_show"
   | "fallback_episode_no_timestamp"
   | "same_app_normalized"
-  | "failed"
-  | "logged";
+  | "failed";
 
 export type ConfidenceBucket = "none" | "low" | "medium" | "high";
-export type FeedbackProviderId = ProviderId | "unknown";
+export type DiagnosticProviderId = ProviderId | "unknown";
 
 export type ProviderContentMapping = {
   showId?: string;
@@ -89,19 +88,20 @@ export type ConversionAttempt = {
   selectedCandidateId?: string;
   failureClass?: FailureClass;
   artworkResolved: boolean;
-  feedbackLogged: boolean;
+  diagnosticEmitted: boolean;
 };
 
-export type FeedbackEvent = {
-  feedbackEventId: string;
+export type RuntimeDiagnosticSignal = {
+  diagnosticSignalId: string;
   attemptId: string;
-  sourceProviderId: FeedbackProviderId;
-  targetProviderId: FeedbackProviderId;
+  sourceProviderId: DiagnosticProviderId;
+  targetProviderId: DiagnosticProviderId;
   failureClass: FailureClass;
   normalizedIdentityHash: string;
   confidenceBucket: ConfidenceBucket;
   strippedTrackingKeys: string[];
-  createdAt: string;
+  emittedAt: string;
+  sink: "runtime_log" | "console_only";
 };
 
 export type PreviewResponse = {
@@ -137,7 +137,6 @@ export type ErrorResponse = {
   errorCode: FailureClass;
   message: string;
   retryable: boolean;
-  feedbackLogged: boolean;
 };
 
 export type ProvidersResponse = {

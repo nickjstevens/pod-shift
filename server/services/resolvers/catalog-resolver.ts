@@ -76,15 +76,19 @@ async function resolveUncached(source: NormalizedSourceLink): Promise<ResolvedCa
     return localMatch;
   }
 
-  if (!config.useMockCatalog && source.resolutionHints.feedUrl) {
+  const liveCatalogEnabled = !config.useMockCatalog;
+  const feedUrl = source.resolutionHints.feedUrl?.trim();
+  const titleHint = source.resolutionHints.titleHint?.trim();
+
+  if (liveCatalogEnabled && feedUrl) {
     const client = new PodcastIndexClient();
-    const match = await client.lookupByFeedUrl(source.resolutionHints.feedUrl);
+    const match = await client.lookupByFeedUrl(feedUrl);
     return toExternalMatch(match);
   }
 
-  if (!config.useMockCatalog && source.resolutionHints.titleHint) {
+  if (liveCatalogEnabled && titleHint) {
     const client = new PodcastIndexClient();
-    const matches = await client.searchByTitle(source.resolutionHints.titleHint);
+    const matches = await client.searchByTitle(titleHint);
     return toExternalMatch(matches[0] ?? null);
   }
 
