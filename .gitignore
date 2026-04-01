@@ -1,12 +1,64 @@
+# Spec Kit project source
+# Keep .specify/ tracked: it contains the project's constitution, templates,
+# and workflow scripts.
+
+# Node / Nuxt build output
+node_modules/
+.nuxt/
+.output/
+dist/
+build/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+# Environment and local runtime state
+.env
+.env.*
+!.env.example
+data/
+tmp/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
 # Generated agent and prompt scaffolding
+.agents/
 .github/agents/
 .github/prompts/
 
-# Local specification tooling state
-.specify/
+# Generated agent context files from Spec Kit
+AGENTS.md
+CLAUDE.md
+CODEBUDDY.md
+GEMINI.md
+IFLOW.md
+KIMI.md
+QODER.md
+QWEN.md
+SHAI.md
+TABNINE.md
+.agent/
+.augment/
+.cursor/
+.junie/
+.kilocode/
+.roo/
+.trae/
+.vibe/
+.windsurf/
 
 # Editor-specific settings
+.idea/
 .vscode/
 
 # macOS filesystem metadata
 .DS_Store
+Thumbs.db
+*.swp
+*.tmp
