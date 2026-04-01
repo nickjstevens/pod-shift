@@ -3,6 +3,10 @@ const model = defineModel<string>({
   required: true
 });
 
+const emit = defineEmits<{
+  blurred: [];
+}>();
+
 const props = defineProps<{
   disabled?: boolean;
 }>();
@@ -20,6 +24,7 @@ const props = defineProps<{
       type="url"
       inputmode="url"
       placeholder="https://podcasts.apple.com/..."
+      @blur="emit('blurred')"
     />
     <p class="field-help">
       Public episode and show links work best. Tracking parameters are removed before matching.

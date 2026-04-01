@@ -311,6 +311,30 @@ textarea {
   margin-top: 1rem;
 }
 
+.preview-card__details {
+  display: grid;
+  align-content: start;
+  gap: 0.45rem;
+}
+
+.preview-card__title,
+.result-card__identity-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.preview-card__episode {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.preview-card__author {
+  margin: 0;
+  color: var(--muted);
+}
+
 .preview-card__artwork,
 .preview-card__placeholder {
   width: 128px;
@@ -333,6 +357,29 @@ textarea {
   line-height: 1.45;
 }
 
+.preview-card__skeleton {
+  height: 0.95rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(19, 32, 51, 0.1), rgba(217, 95, 49, 0.18), rgba(19, 32, 51, 0.1));
+  background-size: 220% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+.preview-card__skeleton--title {
+  width: min(80%, 18rem);
+  height: 1.2rem;
+}
+
+.preview-card__skeleton--line {
+  width: min(65%, 14rem);
+}
+
+.result-card__identity {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.9rem;
+}
+
 .progress-card__header {
   display: flex;
   gap: 1rem;
@@ -351,6 +398,12 @@ textarea {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -220% 0;
   }
 }
 

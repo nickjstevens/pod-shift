@@ -11,9 +11,10 @@ const { data: providersData } = await useFetch<ProvidersResponse>("/api/provider
 const initialProviders = providersData.value?.providers.filter((provider) => provider.supportsOutput) ?? [];
 const conversionForm = ref<HTMLFormElement | null>(null);
 const isReady = ref(false);
-const { preview, requestPreview, schedulePreview } = usePreviewState();
+const { handleInputChanged, isLoadingPreview, preview, previewError, requestPreview } = usePreviewState();
 
 const {
+  clearOutcome,
   error,
   inputUrl,
   isLoadingProviders,
@@ -42,7 +43,8 @@ watch(inputUrl, (value) => {
     return;
   }
 
-  schedulePreview(value);
+  handleInputChanged(value);
+  clearOutcome();
 });
 
 function handleSubmit(event: Event) {
@@ -56,6 +58,14 @@ function handleButtonClick() {
   }
 
   submitForm(conversionForm.value);
+}
+
+function handleInputBlur() {
+  if (!isReady.value) {
+    return;
+  }
+
+  void requestPreview(inputUrl.value);
 }
 
 function submitForm(form: HTMLFormElement) {
@@ -89,7 +99,11 @@ function submitForm(form: HTMLFormElement) {
         :aria-busy="isSubmitting"
         @submit.prevent="handleSubmit"
       >
-        <LinkInputForm v-model="inputUrl" :disabled="!isReady || isSubmitting" />
+        <LinkInputForm
+          v-model="inputUrl"
+          :disabled="!isReady || isSubmitting"
+          @blurred="handleInputBlur"
+        />
         <TargetProviderSelect
           v-model="targetProvider"
           :providers="providers"
@@ -126,10 +140,12 @@ function submitForm(form: HTMLFormElement) {
 
     <ConversionProgressState v-if="isSubmitting" :preview="preview" />
 
-    <ConversionResultCard v-else-if="result" :result="result" />
+    <ConversionResultCard v-else-if="result" :result="result" :preview="preview" />
 
     <ConversionErrorState v-else-if="error" :error="error" />
 
-    <ArtworkPreviewCard v-else-if="preview" :preview="preview" />
+    <ArtworkPreviewCard v-else-if="preview || isLoadingPreview" :preview="preview" :pending="isLoadingPreview" />
+
+    <ConversionErrorState v-else-if="previewError" :error="previewError" />
   </main>
 </template>

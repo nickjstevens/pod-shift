@@ -113,7 +113,7 @@ export async function convertLink(input: ConvertLinkInput): Promise<ConvertSucce
     };
   }
 
-  if (showUrl) {
+  if (showUrl && normalized.contentKind === "show") {
     return {
       status: "matched_show",
       sourceProvider: normalized.sourceProviderId,

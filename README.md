@@ -17,9 +17,10 @@
 
 - Accepts supported public podcast links as input
 - Strips tracking parameters before matching or diagnostic logging
+- Shows artwork plus resolved show and episode details after the pasted-link field loses focus
 - Converts show and episode links into the destination app the user selects
 - Preserves timestamps when the destination adapter supports them
-- Shows preview artwork when it can be resolved early
+- Keeps the preview identity aligned with the final conversion result
 - Emits only redacted runtime diagnostics for malformed, unsupported, low-confidence, and transient failures
 
 ## Local setup
@@ -37,6 +38,7 @@ npx playwright install chromium webkit
 NUXT_PODCAST_INDEX_API_KEY=your-key
 NUXT_PODCAST_INDEX_API_SECRET=your-secret
 POD_SHIFT_USE_MOCK_CATALOG=false
+POD_SHIFT_PROVIDER_ENRICHMENT_CACHE_TTL_MS=300000
 POD_SHIFT_REQUEST_TIMEOUT_MS=8000
 ```
 
@@ -61,6 +63,7 @@ separate database service.
    - `NUXT_PODCAST_INDEX_API_KEY`
    - `NUXT_PODCAST_INDEX_API_SECRET`
    - `POD_SHIFT_USE_MOCK_CATALOG=false`
+   - `POD_SHIFT_PROVIDER_ENRICHMENT_CACHE_TTL_MS=300000`
    - `POD_SHIFT_REQUEST_TIMEOUT_MS=8000`
 3. Push a branch and verify the preview deployment converts a supported link and returns explicit failures without any database configuration.
 
@@ -77,4 +80,5 @@ npm run test:e2e
 - `NUXT_PODCAST_INDEX_API_KEY`: required for live catalog lookup
 - `NUXT_PODCAST_INDEX_API_SECRET`: required for live catalog lookup
 - `POD_SHIFT_USE_MOCK_CATALOG`: defaults to `false`; set to `true` for seeded local fixtures only
+- `POD_SHIFT_PROVIDER_ENRICHMENT_CACHE_TTL_MS`: optional transient cache TTL for Apple, Pocket Casts, and Fountain enrichment requests
 - `POD_SHIFT_REQUEST_TIMEOUT_MS`: optional request timeout override for catalog lookups

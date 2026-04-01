@@ -19,6 +19,6 @@ defineProps<{
       </div>
     </div>
 
-    <ArtworkPreviewCard v-if="preview" :preview="preview" />
+    <ArtworkPreviewCard :preview="preview" :pending="true" />
   </section>
 </template>

@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 
-import type { ConvertSuccessResponse } from "../../../shared/types/conversion";
+import type { ConvertSuccessResponse, PreviewResponse } from "../../../shared/types/conversion";
 
 const props = defineProps<{
   result: ConvertSuccessResponse;
+  preview?: PreviewResponse | null;
 }>();
 
 const copied = ref(false);
@@ -55,6 +56,11 @@ async function copyLink() {
     </div>
 
     <p class="result-card__message">{{ props.result.message }}</p>
+    <div v-if="props.preview" class="result-card__identity">
+      <p class="result-card__identity-title">{{ props.preview.showTitle ?? "Resolved podcast" }}</p>
+      <p v-if="props.preview.episodeTitle" class="support-copy">{{ props.preview.episodeTitle }}</p>
+      <p v-if="props.preview.author" class="support-copy">{{ props.preview.author }}</p>
+    </div>
     <p class="result-card__meta">
       This is the best public {{ props.result.contentKind }} link available for
       {{ providerLabels[props.result.targetProvider] }}.

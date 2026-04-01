@@ -4,6 +4,7 @@ import { failureClasses, providerIds } from "../types/provider";
 
 export const providerIdSchema = z.enum(providerIds);
 export const failureClassSchema = z.enum(failureClasses);
+export const previewLevelSchema = z.enum(["episode", "show", "unresolved"]);
 
 export const previewRequestSchema = z.object({
   inputUrl: z.string().url()
@@ -30,6 +31,10 @@ export const previewResponseSchema = z.object({
   normalizedUrl: z.string().url(),
   sourceProvider: providerIdSchema,
   contentKind: z.enum(["show", "episode", "unknown"]),
+  previewLevel: previewLevelSchema,
+  showTitle: z.string().nullable(),
+  episodeTitle: z.string().nullable(),
+  author: z.string().nullable(),
   timestampSeconds: z.number().int().nonnegative().nullable(),
   artworkUrl: z.string().url().nullable(),
   availableTargets: z.array(providerIdSchema),

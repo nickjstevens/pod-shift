@@ -11,6 +11,10 @@ describe("buildPreview", () => {
 
     expect(preview.sourceProvider).toBe("apple_podcasts");
     expect(preview.contentKind).toBe("episode");
+    expect(preview.previewLevel).toBe("episode");
+    expect(preview.showTitle).toBe("The Daily");
+    expect(preview.episodeTitle).toBe("Inside the Election Endgame");
+    expect(preview.author).toBe("The New York Times");
     expect(preview.artworkUrl).toContain("the-daily-episode-001");
     expect(preview.availableTargets).toContain("pocket_casts");
   });
@@ -21,6 +25,9 @@ describe("buildPreview", () => {
     });
 
     expect(preview.sourceProvider).toBe("youtube");
+    expect(preview.previewLevel).toBe("unresolved");
+    expect(preview.showTitle).toBeNull();
+    expect(preview.episodeTitle).toBeNull();
     expect(preview.artworkUrl).toBeNull();
     expect(preview.warnings[0]).toContain("Artwork preview is not available");
   });
