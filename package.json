@@ -1,0 +1,30 @@
+{
+  "name": "pod-shift",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "postinstall": "NUXT_TELEMETRY_DISABLED=1 nuxt prepare",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "vitest run tests/integration",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "nuxt": "^4.0.0",
+    "pg": "^8.16.3",
+    "vue": "^3.5.17",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.2",
+    "@types/node": "^24.0.0",
+    "@vue/test-utils": "^2.4.6",
+    "happy-dom": "^17.6.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}
