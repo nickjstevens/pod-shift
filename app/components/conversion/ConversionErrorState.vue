@@ -16,6 +16,10 @@ const retryMessage = computed(() => {
     return "Try a different source link for the same show or episode if one is available.";
   }
 
+  if (props.error.errorCode === "unresolved_content") {
+    return "The source show or episode was identified, but the selected app did not expose a stable public link for it.";
+  }
+
   return "Try a different supported podcast link or choose another destination app.";
 });
 </script>

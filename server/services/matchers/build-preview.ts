@@ -2,6 +2,7 @@ import type { PreviewResponse } from "../../../shared/types/conversion";
 import { listEnabledOutputProviders } from "../adapters/provider-registry";
 import { normalizeInput } from "../normalizers/normalize-input";
 import { resolveCatalogMatch } from "../resolvers/catalog-resolver";
+import { enrichSourceLink } from "../resolvers/provider-enrichment";
 import { resolveYoutubeBestEffort } from "../resolvers/youtube-matcher";
 import { ApiError } from "../../utils/api-error";
 
@@ -27,14 +28,31 @@ export async function buildPreview(input: BuildPreviewInput): Promise<PreviewRes
     resolved = await resolveYoutubeBestEffort(normalized);
   }
 
-  const artworkUrl = resolved?.episode?.artworkUrl ?? resolved?.show?.artworkUrl ?? null;
-  const warnings = artworkUrl ? [] : ["Artwork preview is not available yet."];
+  const enrichment = resolved?.enrichment ?? (await enrichSourceLink(normalized));
+  const showTitle = resolved?.show?.title ?? enrichment?.showTitle ?? null;
+  const episodeTitle = resolved?.episode?.title ?? enrichment?.episodeTitle ?? null;
+  const author = resolved?.show?.author ?? enrichment?.author ?? null;
+  const artworkUrl =
+    resolved?.episode?.artworkUrl ??
+    resolved?.show?.artworkUrl ??
+    enrichment?.artworkUrl ??
+    null;
+  const previewLevel = episodeTitle ? "episode" : showTitle ? "show" : "unresolved";
+  const warnings = [...(enrichment?.warnings ?? [])];
+
+  if (!artworkUrl) {
+    warnings.push("Artwork preview is not available yet.");
+  }
 
   return {
     requestId: normalized.requestId,
     normalizedUrl: normalized.normalizedUrl,
     sourceProvider: normalized.sourceProviderId,
     contentKind: normalized.contentKind,
+    previewLevel,
+    showTitle,
+    episodeTitle,
+    author,
     timestampSeconds: normalized.timestampSeconds,
     artworkUrl,
     availableTargets: listEnabledOutputProviders().map((provider) => provider.id),

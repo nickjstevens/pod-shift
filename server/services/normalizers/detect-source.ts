@@ -45,15 +45,20 @@ function detectApplePodcasts(url: URL): DetectedSource | null {
   }
 
   const episodeId = url.searchParams.get("i");
+  const countryCode = url.pathname.split("/").filter(Boolean)[0];
+  const slugMatch = url.pathname.match(/\/podcast\/([^/]+)\/id\d+/u);
   return {
     sourceProviderId: "apple_podcasts",
     contentKind: episodeId ? "episode" : "show",
     providerEntityId: episodeId ?? idMatch[1],
     timestampSeconds: readTimestampSeconds(url),
     resolutionHints: {
+      countryCode: countryCode?.length === 2 ? countryCode : undefined,
       showId: idMatch[1],
       episodeId: episodeId ?? undefined,
-      providerPath: url.pathname
+      providerPath: url.pathname,
+      titleHint: slugMatch?.[1]?.replaceAll("-", " "),
+      canonicalUrl: url.toString()
     }
   };
 }
@@ -95,7 +100,42 @@ function detectSimplePathSource(
   return null;
 }
 
-function detectPocketCasts(url: URL) {
+function detectPocketCasts(url: URL): DetectedSource | null {
+  const canonicalEpisodeMatch = url.pathname.match(
+    /^\/podcast\/([^/]+)\/([^/]+)\/([^/]+)\/([^/?#]+)/u
+  );
+  if (canonicalEpisodeMatch) {
+    return {
+      sourceProviderId: "pocket_casts",
+      contentKind: "episode",
+      providerEntityId: canonicalEpisodeMatch[4],
+      timestampSeconds: readTimestampSeconds(url),
+      resolutionHints: {
+        showId: canonicalEpisodeMatch[2],
+        episodeId: canonicalEpisodeMatch[4],
+        providerPath: url.pathname,
+        titleHint: canonicalEpisodeMatch[3].replaceAll("-", " "),
+        canonicalUrl: url.toString()
+      }
+    };
+  }
+
+  const canonicalShowMatch = url.pathname.match(/^\/podcast\/([^/]+)\/([^/?#]+)/u);
+  if (canonicalShowMatch) {
+    return {
+      sourceProviderId: "pocket_casts",
+      contentKind: "show",
+      providerEntityId: canonicalShowMatch[2],
+      timestampSeconds: readTimestampSeconds(url),
+      resolutionHints: {
+        showId: canonicalShowMatch[2],
+        providerPath: url.pathname,
+        titleHint: canonicalShowMatch[1].replaceAll("-", " "),
+        canonicalUrl: url.toString()
+      }
+    };
+  }
+
   return detectSimplePathSource(
     "pocket_casts",
     url,

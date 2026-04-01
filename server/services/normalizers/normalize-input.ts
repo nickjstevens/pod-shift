@@ -33,7 +33,10 @@ export function normalizeInput(inputUrl: string): NormalizedSourceLink {
     timestampSeconds: detectedSource.timestampSeconds,
     providerEntityId: detectedSource.providerEntityId,
     strippedTrackingKeys,
-    resolutionHints: detectedSource.resolutionHints
+    resolutionHints: {
+      ...detectedSource.resolutionHints,
+      canonicalUrl: detectedSource.resolutionHints.canonicalUrl ?? normalizedUrl
+    }
   };
 }
 

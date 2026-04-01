@@ -1,6 +1,7 @@
 import type { ContentKind, FailureClass, ProviderCapability, ProviderId } from "./provider";
 
 export type MatchMethod = "provider_id" | "feed_url" | "podcast_guid" | "metadata" | "hybrid";
+export type PreviewLevel = "episode" | "show" | "unresolved";
 export type ConversionState =
   | "received"
   | "normalized"
@@ -27,6 +28,7 @@ export type ProviderContentMapping = {
 
 export type ResolutionHints = {
   providerPath?: string;
+  countryCode?: string;
   showId?: string;
   episodeId?: string;
   feedUrl?: string;
@@ -34,6 +36,7 @@ export type ResolutionHints = {
   videoId?: string;
   authorHint?: string;
   titleHint?: string;
+  canonicalUrl?: string;
 };
 
 export type NormalizedSourceLink = {
@@ -66,6 +69,24 @@ export type CanonicalEpisode = {
   publishedAt?: string;
   durationSeconds?: number;
   artworkUrl?: string;
+  enclosureUrl?: string;
+  providerMappings: Partial<Record<ProviderId, ProviderContentMapping>>;
+};
+
+export type ProviderEnrichment = {
+  enrichmentId: string;
+  requestId: string;
+  sourceProviderId: ProviderId;
+  showTitle: string | null;
+  episodeTitle: string | null;
+  author: string | null;
+  artworkUrl: string | null;
+  feedUrl: string | null;
+  enclosureUrl: string | null;
+  episodeGuid: string | null;
+  providerCanonicalUrl: string | null;
+  resolvedVia: string[];
+  warnings: string[];
   providerMappings: Partial<Record<ProviderId, ProviderContentMapping>>;
 };
 
@@ -109,6 +130,10 @@ export type PreviewResponse = {
   normalizedUrl: string;
   sourceProvider: ProviderId;
   contentKind: ContentKind;
+  previewLevel: PreviewLevel;
+  showTitle: string | null;
+  episodeTitle: string | null;
+  author: string | null;
   timestampSeconds: number | null;
   artworkUrl: string | null;
   availableTargets: ProviderId[];

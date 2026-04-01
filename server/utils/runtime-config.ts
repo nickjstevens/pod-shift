@@ -3,6 +3,7 @@ export type RuntimeConfig = {
   podcastIndexApiSecret: string;
   useMockCatalog: boolean;
   requestTimeoutMs: number;
+  providerEnrichmentCacheTtlMs: number;
 };
 
 function readBoolean(value: string | undefined, fallback: boolean) {
@@ -31,6 +32,7 @@ export function readRuntimeConfig(): RuntimeConfig {
     podcastIndexApiKey: process.env.NUXT_PODCAST_INDEX_API_KEY ?? "",
     podcastIndexApiSecret: process.env.NUXT_PODCAST_INDEX_API_SECRET ?? "",
     useMockCatalog: readBoolean(process.env.POD_SHIFT_USE_MOCK_CATALOG, false),
-    requestTimeoutMs: readInteger(process.env.POD_SHIFT_REQUEST_TIMEOUT_MS, 8000)
+    requestTimeoutMs: readInteger(process.env.POD_SHIFT_REQUEST_TIMEOUT_MS, 8000),
+    providerEnrichmentCacheTtlMs: readInteger(process.env.POD_SHIFT_PROVIDER_ENRICHMENT_CACHE_TTL_MS, 300000)
   };
 }

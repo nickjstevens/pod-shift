@@ -1,9 +1,23 @@
 <script setup lang="ts">
+import { computed } from "vue";
+
 import type { PreviewResponse } from "../../../shared/types/conversion";
 
-defineProps<{
-  preview: PreviewResponse;
+const props = defineProps<{
+  preview?: PreviewResponse | null;
+  pending?: boolean;
 }>();
+
+const previewLevelLabel = computed(() => {
+  switch (props.preview?.previewLevel) {
+    case "episode":
+      return "Episode-level match detected.";
+    case "show":
+      return "Show-level match detected.";
+    default:
+      return "Matching details are still being confirmed.";
+  }
+});
 </script>
 
 <template>
@@ -13,8 +27,8 @@ defineProps<{
 
     <div class="preview-card__body">
       <img
-        v-if="preview.artworkUrl"
-        :src="preview.artworkUrl"
+        v-if="props.preview?.artworkUrl"
+        :src="props.preview.artworkUrl"
         alt="Podcast artwork"
         class="preview-card__artwork"
       />
@@ -23,14 +37,27 @@ defineProps<{
       </div>
 
       <div class="preview-card__details">
-        <p class="support-copy">
-          {{ preview.contentKind === "episode" ? "Episode-level match detected." : "Show-level match detected." }}
-        </p>
-        <p class="support-copy">
-          Source: <code>{{ preview.sourceProvider }}</code>
-        </p>
-        <ul v-if="preview.warnings.length" class="message-list">
-          <li v-for="warning in preview.warnings" :key="warning">
+        <template v-if="props.preview">
+          <p class="preview-card__title">{{ props.preview.showTitle ?? "Resolving podcast details" }}</p>
+          <p v-if="props.preview.episodeTitle" class="preview-card__episode">{{ props.preview.episodeTitle }}</p>
+          <p v-if="props.preview.author" class="preview-card__author">{{ props.preview.author }}</p>
+          <p class="support-copy">{{ previewLevelLabel }}</p>
+          <p class="support-copy">
+            Source: <code>{{ props.preview.sourceProvider }}</code>
+          </p>
+          <p class="support-copy">
+            Preview: <code>{{ props.preview.previewLevel }}</code>
+          </p>
+        </template>
+
+        <template v-else-if="props.pending">
+          <div class="preview-card__skeleton preview-card__skeleton--title"></div>
+          <div class="preview-card__skeleton preview-card__skeleton--line"></div>
+          <div class="preview-card__skeleton preview-card__skeleton--line"></div>
+        </template>
+
+        <ul v-if="props.preview?.warnings.length" class="message-list">
+          <li v-for="warning in props.preview.warnings" :key="warning">
             {{ warning }}
           </li>
         </ul>

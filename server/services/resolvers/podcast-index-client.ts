@@ -12,6 +12,8 @@ type PodcastIndexFeed = {
 };
 
 type PodcastIndexEpisode = {
+  enclosureUrl?: string;
+  feedId?: number;
   id: number;
   title: string;
   guid?: string;
@@ -100,5 +102,25 @@ export class PodcastIndexClient {
 
     const payload = (await response.json()) as PodcastIndexEpisodesResponse;
     return payload.items ?? [];
+  }
+
+  async findEpisodeByGuid(feedId: number, guid: string) {
+    const episodes = await this.listEpisodes(feedId);
+    return episodes.find((episode) => episode.guid?.trim() === guid.trim()) ?? null;
+  }
+
+  async findEpisodeByTitle(feedId: number, title: string) {
+    const episodes = await this.listEpisodes(feedId);
+    const normalizedTitle = title.trim().toLowerCase();
+
+    return episodes.find((episode) => episode.title.trim().toLowerCase() === normalizedTitle) ?? null;
+  }
+
+  async findEpisodeByEnclosure(feedId: number, enclosureUrl: string) {
+    const episodes = await this.listEpisodes(feedId);
+    return (
+      episodes.find((episode) => episode.enclosureUrl?.trim() === enclosureUrl.trim()) ??
+      episodes.find((episode) => enclosureUrl.includes(episode.guid ?? ""))
+    ) ?? null;
   }
 }

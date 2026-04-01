@@ -88,7 +88,13 @@ export function useConversionFlow(
     }
   }
 
+  function clearOutcome() {
+    result.value = null;
+    error.value = null;
+  }
+
   return {
+    clearOutcome,
     error,
     inputUrl,
     isLoadingProviders,
