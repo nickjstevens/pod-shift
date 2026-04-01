@@ -1,9 +1,7 @@
 export type RuntimeConfig = {
   podcastIndexApiKey: string;
   podcastIndexApiSecret: string;
-  databaseUrl: string;
   useMockCatalog: boolean;
-  feedbackStore: "memory" | "postgres";
   requestTimeoutMs: number;
 };
 
@@ -29,15 +27,10 @@ function readInteger(value: string | undefined, fallback: number) {
 }
 
 export function readRuntimeConfig(): RuntimeConfig {
-  const feedbackStore =
-    process.env.POD_SHIFT_FEEDBACK_STORE === "postgres" ? "postgres" : "memory";
-
   return {
     podcastIndexApiKey: process.env.NUXT_PODCAST_INDEX_API_KEY ?? "",
     podcastIndexApiSecret: process.env.NUXT_PODCAST_INDEX_API_SECRET ?? "",
-    databaseUrl: process.env.DATABASE_URL ?? "",
-    useMockCatalog: readBoolean(process.env.POD_SHIFT_USE_MOCK_CATALOG, true),
-    feedbackStore,
+    useMockCatalog: readBoolean(process.env.POD_SHIFT_USE_MOCK_CATALOG, false),
     requestTimeoutMs: readInteger(process.env.POD_SHIFT_REQUEST_TIMEOUT_MS, 8000)
   };
 }

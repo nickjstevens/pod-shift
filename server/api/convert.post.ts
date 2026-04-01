@@ -16,15 +16,13 @@ type ConvertApiBody = {
 export async function handleConvertRequest(body: ConvertApiBody) {
   const parsed = convertRequestSchema.safeParse(body);
   if (!parsed.success) {
-    const response = toErrorResponse(
-      new ApiError(400, "malformed_link", "Paste a full public podcast URL to convert.")
-    );
+    const error = new ApiError(400, "malformed_link", "Paste a full public podcast URL to convert.");
+    const response = toErrorResponse(error);
     await logFailureFeedback({
-      error: new ApiError(400, "malformed_link", "Paste a full public podcast URL to convert."),
+      error,
       inputUrl: body.inputUrl ?? "",
       targetProviderId: body.targetProvider ?? "unknown"
     });
-    response.body.feedbackLogged = true;
     return response;
   }
 
@@ -38,7 +36,6 @@ export async function handleConvertRequest(body: ConvertApiBody) {
       inputUrl: parsed.data.inputUrl,
       targetProviderId: parsed.data.targetProvider
     });
-    response.body.feedbackLogged = true;
     return response;
   }
 }

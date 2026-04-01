@@ -1,8 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { convertLink } from "../../../../server/services/matchers/convert-link";
 
 describe("convertLink direct-provider matching", () => {
+  beforeEach(() => {
+    process.env.POD_SHIFT_USE_MOCK_CATALOG = "false";
+  });
+
   it("returns a deterministic episode conversion for direct provider mappings", async () => {
     const result = await convertLink({
       inputUrl:
@@ -42,5 +46,6 @@ describe("convertLink direct-provider matching", () => {
     expect(result.targetUrl).toBe(
       "https://podcasts.apple.com/us/podcast/the-daily/id1200361736?i=1000654321001"
     );
+    expect(result.warnings).toHaveLength(0);
   });
 });

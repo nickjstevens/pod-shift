@@ -53,6 +53,9 @@ TABNINE.md
 .vibe/
 .windsurf/
 
+# Linked Vercel project metadata
+.vercel/
+
 # Editor-specific settings
 .idea/
 .vscode/

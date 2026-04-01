@@ -181,10 +181,16 @@ textarea {
 .field-help,
 .support-copy,
 .result-card__message,
+.result-card__meta,
 .message-list {
   margin: 0;
   color: var(--muted);
   line-height: 1.55;
+}
+
+.field-help,
+.result-card__meta {
+  font-size: 0.94rem;
 }
 
 .primary-button,

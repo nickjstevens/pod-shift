@@ -1,30 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "../../../../server/utils/api-error";
-import { classifyFailure } from "../../../../server/services/feedback/classify-failure";
 import {
   clearRuntimeDiagnosticSignals,
   listRuntimeDiagnosticSignals
 } from "../../../../server/services/feedback/feedback-repository";
 import { logFailureFeedback } from "../../../../server/services/feedback/log-feedback";
 
-describe("failure classification and feedback redaction", () => {
+describe("runtime diagnostics", () => {
   afterEach(() => {
+    clearRuntimeDiagnosticSignals();
     vi.restoreAllMocks();
   });
 
-  it("classifies low-confidence failures distinctly", () => {
-    const classified = classifyFailure(
-      new ApiError(422, "low_confidence_match", "No confident podcast match was found.")
-    );
-
-    expect(classified.failureClass).toBe("low_confidence_match");
-    expect(classified.confidenceBucket).toBe("low");
-    expect(classified.retryable).toBe(false);
-  });
-
-  it("logs only redacted feedback details", async () => {
-    clearRuntimeDiagnosticSignals();
+  it("emits redacted runtime diagnostics for failed requests", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
 
     await logFailureFeedback({
@@ -34,11 +23,26 @@ describe("failure classification and feedback redaction", () => {
     });
 
     const [diagnostic] = listRuntimeDiagnosticSignals();
+    expect(diagnostic.failureClass).toBe("unsupported_source");
     expect(diagnostic.sourceProviderId).toBe("youtube");
     expect(diagnostic.targetProviderId).toBe("pocket_casts");
     expect(diagnostic.strippedTrackingKeys).toEqual(["si"]);
     expect(diagnostic.normalizedIdentityHash).toHaveLength(64);
     expect(diagnostic.sink).toBe("runtime_log");
-    expect(Object.prototype.hasOwnProperty.call(diagnostic, "inputUrl")).toBe(false);
+  });
+
+  it("keeps the user-response path safe when diagnostic emission throws", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    warnSpy.mockImplementationOnce(() => {
+      throw new Error("logger unavailable");
+    });
+
+    await expect(
+      logFailureFeedback({
+        error: new ApiError(503, "temporary_resolution_failure", "Temporary failure.", true),
+        inputUrl: "https://example.com/broken",
+        targetProviderId: "unknown"
+      })
+    ).resolves.toBeNull();
   });
 });

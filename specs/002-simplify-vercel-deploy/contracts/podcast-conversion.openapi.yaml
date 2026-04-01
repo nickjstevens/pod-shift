@@ -1,0 +1,261 @@
+openapi: 3.1.0
+info:
+  title: pod-shift conversion API
+  version: 0.2.0
+  summary: Preview and convert public podcast links across supported podcast apps without database persistence.
+servers:
+  - url: /api
+paths:
+  /providers:
+    get:
+      summary: List supported providers with capability metadata for the selector UI.
+      operationId: listProviders
+      responses:
+        '200':
+          description: Provider matrix returned successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - providers
+                properties:
+                  providers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProviderCapability'
+  /preview:
+    post:
+      summary: Normalize an input link and return preview metadata for the UI.
+      operationId: previewLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreviewRequest'
+      responses:
+        '200':
+          description: Preview metadata resolved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreviewResponse'
+        '400':
+          description: The pasted link is malformed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: The source provider is unsupported or the input cannot be classified.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /convert:
+    post:
+      summary: Convert a raw input link into the chosen target provider.
+      operationId: convertLink
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConvertRequest'
+      responses:
+        '200':
+          description: Conversion completed successfully or fell back to an episode-level result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConvertSuccessResponse'
+        '400':
+          description: The request is invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: No confident conversion result can be produced.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: A required provider lookup is temporarily unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    ProviderId:
+      type: string
+      enum:
+        - apple_podcasts
+        - pocket_casts
+        - fountain
+        - overcast
+        - youtube
+        - youtube_music
+        - spotify
+        - castbox
+    ProviderCapability:
+      type: object
+      required:
+        - id
+        - displayName
+        - supportsInput
+        - supportsOutput
+        - launchState
+        - timestampMode
+      properties:
+        id:
+          $ref: '#/components/schemas/ProviderId'
+        displayName:
+          type: string
+        supportsInput:
+          type: boolean
+        supportsOutput:
+          type: boolean
+        launchState:
+          type: string
+          enum:
+            - enabled
+            - planned
+        timestampMode:
+          type: string
+          enum:
+            - native
+            - episode_fallback
+            - none
+        notes:
+          type: array
+          items:
+            type: string
+    PreviewRequest:
+      type: object
+      required:
+        - inputUrl
+      properties:
+        inputUrl:
+          type: string
+          format: uri
+    PreviewResponse:
+      type: object
+      required:
+        - requestId
+        - normalizedUrl
+        - sourceProvider
+        - contentKind
+        - availableTargets
+      properties:
+        requestId:
+          type: string
+          format: uuid
+        normalizedUrl:
+          type: string
+          format: uri
+        sourceProvider:
+          $ref: '#/components/schemas/ProviderId'
+        contentKind:
+          type: string
+          enum:
+            - show
+            - episode
+            - unknown
+        timestampSeconds:
+          type:
+            - integer
+            - 'null'
+          minimum: 0
+        artworkUrl:
+          type:
+            - string
+            - 'null'
+          format: uri
+        availableTargets:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderId'
+        warnings:
+          type: array
+          items:
+            type: string
+    ConvertRequest:
+      type: object
+      required:
+        - inputUrl
+        - targetProvider
+      properties:
+        inputUrl:
+          type: string
+          format: uri
+        targetProvider:
+          $ref: '#/components/schemas/ProviderId'
+        preferTimestamp:
+          type: boolean
+          default: true
+    ConvertSuccessResponse:
+      type: object
+      required:
+        - status
+        - sourceProvider
+        - targetProvider
+        - contentKind
+        - targetUrl
+        - timestampApplied
+      properties:
+        status:
+          type: string
+          enum:
+            - matched_episode
+            - matched_show
+            - fallback_episode_no_timestamp
+            - same_app_normalized
+        sourceProvider:
+          $ref: '#/components/schemas/ProviderId'
+        targetProvider:
+          $ref: '#/components/schemas/ProviderId'
+        contentKind:
+          type: string
+          enum:
+            - show
+            - episode
+        targetUrl:
+          type: string
+          format: uri
+        timestampApplied:
+          type: boolean
+        artworkUrl:
+          type:
+            - string
+            - 'null'
+          format: uri
+        warnings:
+          type: array
+          items:
+            type: string
+        message:
+          type: string
+    ErrorResponse:
+      type: object
+      required:
+        - errorCode
+        - message
+        - retryable
+      properties:
+        errorCode:
+          type: string
+          enum:
+            - malformed_link
+            - unsupported_source
+            - unsupported_target
+            - unresolved_content
+            - low_confidence_match
+            - temporary_resolution_failure
+        message:
+          type: string
+        retryable:
+          type: boolean

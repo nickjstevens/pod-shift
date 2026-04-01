@@ -1,8 +1,17 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { handlePreviewRequest } from "../../../server/api/preview.post";
+import {
+  clearRuntimeDiagnosticSignals,
+  listRuntimeDiagnosticSignals
+} from "../../../server/services/feedback/feedback-repository";
 
 describe("/api/preview", () => {
+  beforeEach(() => {
+    clearRuntimeDiagnosticSignals();
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+
   it("returns normalized preview metadata and artwork when available", async () => {
     const response = await handlePreviewRequest({
       inputUrl:
@@ -24,5 +33,16 @@ describe("/api/preview", () => {
     expect(response.statusCode).toBe(200);
     expect(response.body.artworkUrl).toBeNull();
     expect(response.body.warnings[0]).toContain("Artwork preview is not available");
+  });
+
+  it("returns a malformed-link failure without persistence status leakage", async () => {
+    const response = await handlePreviewRequest({
+      inputUrl: "not-a-url"
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.body.errorCode).toBe("malformed_link");
+    expect("feedbackLogged" in response.body).toBe(false);
+    expect(listRuntimeDiagnosticSignals()).toHaveLength(1);
   });
 });
