@@ -147,6 +147,16 @@ textarea {
   gap: 1.1rem;
 }
 
+.conversion-result-inline {
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius-lg);
+  box-shadow: none;
+}
+
+.conversion-result-inline h2 {
+  margin: 0;
+}
+
 .field-stack {
   display: grid;
   gap: 0.5rem;
@@ -268,6 +278,16 @@ textarea {
 
 .preview-card,
 .progress-card {
+  margin-top: 1rem;
+}
+
+.conversion-panel .preview-card,
+.conversion-panel .error-panel {
+  margin-top: 0;
+}
+
+.support-panel--mobile {
+  display: none;
   margin-top: 1rem;
 }
 
@@ -414,6 +434,14 @@ textarea {
 
   .conversion-layout {
     grid-template-columns: 1fr;
+  }
+
+  .conversion-layout .support-panel {
+    display: none;
+  }
+
+  .support-panel--mobile {
+    display: block;
   }
 }
 

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import ConversionResultCard from "../components/conversion/ConversionResultCard.vue";
 import ConversionProgressState from "../components/conversion/ConversionProgressState.vue";
 import ConversionErrorState from "../components/conversion/ConversionErrorState.vue";
 import ArtworkPreviewCard from "../components/conversion/ArtworkPreviewCard.vue";
@@ -104,6 +103,31 @@ function submitForm(form: HTMLFormElement) {
           :disabled="!isReady || isSubmitting"
           @blurred="handleInputBlur"
         />
+
+        <ArtworkPreviewCard
+          v-if="preview || isLoadingPreview"
+          :preview="preview"
+          :pending="isLoadingPreview"
+        />
+        <ConversionErrorState v-else-if="previewError" :error="previewError" />
+
+        <section
+          v-if="result"
+          class="panel-card conversion-result-inline"
+          aria-live="polite"
+        >
+          <p class="eyebrow">Matched link</p>
+          <h2>Target link</h2>
+          <a
+            class="result-card__url"
+            :href="result.targetUrl"
+            target="_blank"
+            rel="noreferrer"
+          >
+            {{ result.targetUrl }}
+          </a>
+        </section>
+
         <TargetProviderSelect
           v-model="targetProvider"
           :providers="providers"
@@ -139,13 +163,21 @@ function submitForm(form: HTMLFormElement) {
     </section>
 
     <ConversionProgressState v-if="isSubmitting" :preview="preview" />
-
-    <ConversionResultCard v-else-if="result" :result="result" :preview="preview" />
-
     <ConversionErrorState v-else-if="error" :error="error" />
 
-    <ArtworkPreviewCard v-else-if="preview || isLoadingPreview" :preview="preview" :pending="isLoadingPreview" />
+    <aside class="panel-card support-panel support-panel--mobile">
+      <p class="eyebrow">Supported apps</p>
+      <h2>Available destinations</h2>
+      <p class="support-copy">
+        Pod Shift returns the closest public show or episode link it can verify
+        for the app you choose.
+      </p>
 
-    <ConversionErrorState v-else-if="previewError" :error="previewError" />
+      <ul class="provider-pill-list">
+        <li v-for="provider in providers" :key="provider.id">
+          {{ provider.displayName }}
+        </li>
+      </ul>
+    </aside>
   </main>
 </template>
