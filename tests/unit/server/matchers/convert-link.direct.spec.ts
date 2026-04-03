@@ -162,6 +162,51 @@ describe("convertLink direct-provider matching", () => {
     expect(result.targetUrl).toBe("https://fountain.fm/episode/eQUkyrhmd4jTuQGO5zKn");
   });
 
+  it("converts the named Pocket Casts regression link into the expected Apple Podcasts episode URL", async () => {
+    const canonicalUrl =
+      "https://pocketcasts.com/podcast/the-peter-mccormack-show/b3968d50-b3b5-0135-9e5f-5bb073f92b78/161-lyn-alden-why-everything-feels-harder-debt-inflation-the-system/fcfc426a-a7ce-4374-9a9c-d51451bb06ab";
+
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = typeof input === "string" ? input : input.toString();
+
+      if (url === regressionLinks.pocketCastsToFountain) {
+        return textResponse(
+          `
+            <meta property="og:title" content="#161 - Lyn Alden - Why Everything Feels Harder - Debt, Inflation &amp; The System" />
+            <meta property="og:image" content="https://static.pocketcasts.com/discover/images/680/b3968d50-b3b5-0135-9e5f-5bb073f92b78.jpg" />
+            <a href="/podcast/the-peter-mccormack-show/b3968d50-b3b5-0135-9e5f-5bb073f92b78">See all episodes</a>
+            <h2>Episode Description</h2>
+            <div><div>
+              <p><a href="https://podcasts.apple.com/gb/podcast/161-lyn-alden-the-inevitable-collapse-of/id1317356120?i=1000758476274">Apple Podcasts</a></p>
+            </div></div>
+          `,
+          canonicalUrl
+        );
+      }
+
+      if (url === `https://pca.st/oembed.json?url=${encodeURIComponent(canonicalUrl)}`) {
+        return jsonResponse({
+          title: "#161 - Lyn Alden - Why Everything Feels Harder - Debt, Inflation & The System - The Peter McCormack Show",
+          author_name: "The Peter McCormack Show",
+          thumbnail_url: "https://static.pocketcasts.com/discover/images/680/b3968d50-b3b5-0135-9e5f-5bb073f92b78.jpg"
+        });
+      }
+
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    const result = await convertLink({
+      inputUrl: regressionLinks.pocketCastsToFountain,
+      targetProvider: "apple_podcasts",
+      preferTimestamp: true
+    });
+
+    expect(result.status).toBe("matched_episode");
+    expect(result.targetUrl).toBe(
+      "https://podcasts.apple.com/gb/podcast/161-lyn-alden-the-inevitable-collapse-of/id1317356120?i=1000758476274"
+    );
+  });
+
   it("returns an explicit unresolved error when an Apple-origin episode has no stable target mapping", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = typeof input === "string" ? input : input.toString();
