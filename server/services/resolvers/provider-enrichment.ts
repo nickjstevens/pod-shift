@@ -95,6 +95,37 @@ function buildAppleShowUrl(source: NormalizedSourceLink) {
   return target.toString();
 }
 
+function readAppleMappingFromUrl(value: string): ProviderContentMapping | null {
+  try {
+    const url = new URL(value);
+    if (url.hostname !== "podcasts.apple.com") {
+      return null;
+    }
+
+    const showIdMatch = url.pathname.match(/\/id(\d+)/u);
+    if (!showIdMatch) {
+      return null;
+    }
+
+    const showId = showIdMatch[1];
+    const episodeId = url.searchParams.get("i") ?? undefined;
+    const showUrl = new URL(url.toString());
+    showUrl.searchParams.delete("i");
+    showUrl.searchParams.delete("t");
+    showUrl.searchParams.delete("time_continue");
+    showUrl.searchParams.delete("start");
+
+    return {
+      showId,
+      showUrl: showUrl.toString(),
+      episodeId,
+      episodeUrl: episodeId ? url.toString() : undefined
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function enrichAppleSource(source: NormalizedSourceLink) {
   const appleClient = new AppleSearchClient();
   const pocketCastsClient = new PocketCastsClient();
@@ -199,6 +230,12 @@ async function enrichPocketCastsSource(source: NormalizedSourceLink) {
 
   const candidateUrls = pocketCastsClient.extractLinkedUrls(metadata.descriptionHtml);
   const fountainSourceUrl = candidateUrls.find((url) => url.includes("fountain.fm/show/") || url.includes("bit.ly/"));
+  const appleSourceUrl = candidateUrls.find((url) => url.includes("podcasts.apple.com/"));
+
+  if (appleSourceUrl) {
+    const appleMapping = readAppleMappingFromUrl(appleSourceUrl);
+    addMapping(enrichment, "apple_podcasts", appleMapping ?? undefined);
+  }
 
   if (fountainSourceUrl) {
     try {
