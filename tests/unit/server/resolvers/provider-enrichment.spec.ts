@@ -120,4 +120,49 @@ describe("provider enrichment", () => {
     );
     expect(fetchSpy).toHaveBeenCalledTimes(4);
   });
+
+  it("captures Apple Podcasts mappings from Pocket Casts episode descriptions", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = typeof input === "string" ? input : input.toString();
+
+      if (url === regressionLinks.pocketCastsToFountain) {
+        return textResponse(`
+          <html>
+            <head>
+              <meta property="og:title" content="161. Lyn Alden: The Inevitable Collapse of the Euro-Dollar System?" />
+              <meta property="og:image" content="https://img.example.com/lyn.jpg" />
+              <meta property="og:url" content="https://pocketcasts.com/podcast/the-peter-mccormack-show/show-id/lyn-alden/episode-id" />
+            </head>
+            <body>
+              <h2>Episode Description</h2>
+              <div>
+                <div>
+                  <a href="https://podcasts.apple.com/gb/podcast/161-lyn-alden-the-inevitable-collapse-of/id1317356120?i=1000758476274">
+                    Apple Podcasts
+                  </a>
+                </div>
+              </div>
+            </body>
+          </html>
+        `);
+      }
+
+      if (url.startsWith("https://pca.st/oembed.json?url=")) {
+        return jsonResponse({
+          author_name: "The Peter McCormack Show",
+          title: "161. Lyn Alden: The Inevitable Collapse of the Euro-Dollar System? - The Peter McCormack Show"
+        });
+      }
+
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    const enrichment = await enrichSourceLink(normalizeInput(regressionLinks.pocketCastsToFountain));
+
+    expect(enrichment?.providerMappings.apple_podcasts?.showId).toBe("1317356120");
+    expect(enrichment?.providerMappings.apple_podcasts?.episodeId).toBe("1000758476274");
+    expect(enrichment?.providerMappings.apple_podcasts?.episodeUrl).toBe(
+      "https://podcasts.apple.com/gb/podcast/161-lyn-alden-the-inevitable-collapse-of/id1317356120?i=1000758476274"
+    );
+  });
 });
