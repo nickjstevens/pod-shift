@@ -1,4 +1,5 @@
-import type { Page } from "@playwright/test";
+import { expect } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 
 export const demoLinks = {
   appleEpisode:
@@ -18,14 +19,30 @@ export const demoLinks = {
 } as const;
 
 export async function pasteLink(page: Page, value: string) {
-  await page.getByLabel("Podcast link").fill(value);
+  const input = page.getByLabel("Podcast link");
+  await expect(input).toBeEditable({ timeout: 30000 });
+  await input.fill(value);
 }
 
 export async function blurLinkInput(page: Page) {
-  await page.getByLabel("Podcast link").press("Tab");
+  const input = page.getByLabel("Podcast link");
+  await expect(input).toBeEditable({ timeout: 30000 });
+  await input.press("Tab");
 }
 
 export async function pasteLinkAndBlur(page: Page, value: string) {
   await pasteLink(page, value);
   await blurLinkInput(page);
+}
+
+export function getConversionPanel(page: Page): Locator {
+  return page.locator(".conversion-panel");
+}
+
+export function getConversionOutput(page: Page): Locator {
+  return page.locator(".conversion-output-card");
+}
+
+export function getSearchIndicator(page: Page): Locator {
+  return page.locator(".conversion-actions__status");
 }
