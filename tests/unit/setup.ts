@@ -1,6 +1,16 @@
+import { afterEach } from "vitest";
+
+import { resetCatalogCache } from "../../server/services/resolvers/catalog-resolver";
+import { resetProviderEnrichmentCache } from "../../server/services/resolvers/provider-enrichment";
+
 process.env.TZ = "UTC";
 process.env.POD_SHIFT_USE_MOCK_CATALOG ??= "false";
 process.env.POD_SHIFT_PROVIDER_ENRICHMENT_CACHE_TTL_MS ??= "300000";
+
+afterEach(() => {
+  resetCatalogCache();
+  resetProviderEnrichmentCache();
+});
 
 export const regressionLinks = {
   appleToPocketCasts:

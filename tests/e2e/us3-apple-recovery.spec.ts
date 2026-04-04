@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { blurLinkInput, demoLinks, pasteLink } from "./fixtures";
+import { blurLinkInput, demoLinks, getConversionOutput, pasteLink } from "./fixtures";
 
 test("recovers Apple-origin links into a confident cross-app episode match when available", async ({ page }) => {
   await page.goto("/");
@@ -13,8 +13,8 @@ test("recovers Apple-origin links into a confident cross-app episode match when 
   await page.getByLabel("Destination podcast app").selectOption("pocket_casts");
   await page.getByRole("button", { name: "Convert link" }).click();
 
-  await expect(page.getByRole("heading", { name: "Converted link" })).toBeVisible({ timeout: 15000 });
-  await expect(page.getByRole("link", { name: "Open in Pocket Casts" })).toHaveAttribute(
+  await expect(page.getByRole("heading", { name: "Conversion Output" })).toBeVisible({ timeout: 15000 });
+  await expect(getConversionOutput(page).getByRole("link", { name: "Open in Pocket Casts" })).toHaveAttribute(
     "href",
     /pocketcasts\.com\/podcast\/ungovernable-misfits\/.+\/privacy-btc-and-xmr-with-riccardo-spagni/
   );
@@ -62,9 +62,11 @@ test("shows an explicit non-success message without stale success carryover", as
   await page.getByLabel("Destination podcast app").selectOption("pocket_casts");
   await page.getByRole("button", { name: "Convert link" }).click();
 
-  await expect(page.getByText("The selected app does not expose a stable link for this content.")).toBeVisible();
+  await expect(getConversionOutput(page).getByText("The selected app does not expose a stable link for this content.")).toBeVisible();
   await expect(
-    page.getByText("The source show or episode was identified, but the selected app did not expose a stable public link for it.")
+    getConversionOutput(page).getByText(
+      "The source show or episode was identified, but the selected app did not expose a stable public link for it."
+    )
   ).toBeVisible();
   await expect(page.getByRole("heading", { name: "Converted link" })).toHaveCount(0);
 });

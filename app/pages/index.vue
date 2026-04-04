@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import ConversionProgressState from "../components/conversion/ConversionProgressState.vue";
-import ConversionErrorState from "../components/conversion/ConversionErrorState.vue";
 import ArtworkPreviewCard from "../components/conversion/ArtworkPreviewCard.vue";
+import ConversionOutputCard from "../components/conversion/ConversionOutputCard.vue";
 import LinkInputForm from "../components/conversion/LinkInputForm.vue";
 import TargetProviderSelect from "../components/conversion/TargetProviderSelect.vue";
 import type { ProvidersResponse } from "../../shared/types/conversion";
@@ -10,6 +9,7 @@ const { data: providersData } = await useFetch<ProvidersResponse>("/api/provider
 const initialProviders = providersData.value?.providers.filter((provider) => provider.supportsOutput) ?? [];
 const conversionForm = ref<HTMLFormElement | null>(null);
 const isReady = ref(false);
+const skipBlurPreview = ref(false);
 const { handleInputChanged, isLoadingPreview, preview, previewError, requestPreview } = usePreviewState();
 
 const {
@@ -46,6 +46,14 @@ watch(inputUrl, (value) => {
   clearOutcome();
 });
 
+const outputError = computed(() => {
+  if (isSubmitting.value || result.value) {
+    return null;
+  }
+
+  return error.value ?? previewError.value;
+});
+
 function handleSubmit(event: Event) {
   const form = event.currentTarget as HTMLFormElement;
   submitForm(form);
@@ -56,15 +64,27 @@ function handleButtonClick() {
     return;
   }
 
+  skipBlurPreview.value = false;
   submitForm(conversionForm.value);
 }
 
-function handleInputBlur() {
-  if (!isReady.value) {
-    return;
-  }
+function markSubmitIntent() {
+  skipBlurPreview.value = true;
+}
 
-  void requestPreview(inputUrl.value);
+function handleInputBlur() {
+  window.setTimeout(() => {
+    if (skipBlurPreview.value) {
+      skipBlurPreview.value = false;
+      return;
+    }
+
+    if (!isReady.value || isSubmitting.value) {
+      return;
+    }
+
+    void requestPreview(inputUrl.value);
+  }, 0);
 }
 
 function submitForm(form: HTMLFormElement) {
@@ -109,24 +129,6 @@ function submitForm(form: HTMLFormElement) {
           :preview="preview"
           :pending="isLoadingPreview"
         />
-        <ConversionErrorState v-else-if="previewError" :error="previewError" />
-
-        <section
-          v-if="result"
-          class="panel-card conversion-result-inline"
-          aria-live="polite"
-        >
-          <p class="eyebrow">Matched link</p>
-          <h2>Target link</h2>
-          <a
-            class="result-card__url"
-            :href="result.targetUrl"
-            target="_blank"
-            rel="noreferrer"
-          >
-            {{ result.targetUrl }}
-          </a>
-        </section>
 
         <TargetProviderSelect
           v-model="targetProvider"
@@ -134,16 +136,33 @@ function submitForm(form: HTMLFormElement) {
           :disabled="!isReady || isSubmitting || isLoadingProviders"
         />
 
-        <button
-          class="primary-button"
-          type="button"
-          :disabled="!isReady || isSubmitting || !targetProvider"
-          @click="handleButtonClick"
-        >
-          {{ isSubmitting ? "Converting..." : "Convert link" }}
-        </button>
+        <div class="conversion-actions">
+          <button
+            class="primary-button"
+            type="button"
+            :disabled="!isReady || isSubmitting || !targetProvider"
+            @pointerdown="markSubmitIntent"
+            @click="handleButtonClick"
+          >
+            Convert link
+          </button>
 
-        <p class="field-help">No account required.</p>
+          <div
+            v-if="isSubmitting"
+            class="conversion-actions__status"
+            role="status"
+            aria-live="polite"
+          >
+            <span class="conversion-actions__spinner" aria-hidden="true"></span>
+            <span>Searching</span>
+          </div>
+        </div>
+
+        <ConversionOutputCard
+          :result="result"
+          :error="outputError"
+          :preview="preview"
+        />
       </form>
 
       <aside class="panel-card support-panel">
@@ -161,9 +180,6 @@ function submitForm(form: HTMLFormElement) {
         </ul>
       </aside>
     </section>
-
-    <ConversionProgressState v-if="isSubmitting" :preview="preview" />
-    <ConversionErrorState v-else-if="error" :error="error" />
 
     <aside class="panel-card support-panel support-panel--mobile">
       <p class="eyebrow">Supported apps</p>

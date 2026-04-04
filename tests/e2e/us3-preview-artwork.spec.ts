@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { blurLinkInput, demoLinks, pasteLink } from "./fixtures";
+import { blurLinkInput, demoLinks, getSearchIndicator, pasteLink } from "./fixtures";
 
 test("shows artwork preview and a loading state while matching", async ({ page }) => {
   await page.goto("/");
@@ -13,8 +13,9 @@ test("shows artwork preview and a loading state while matching", async ({ page }
   await page.getByLabel("Destination podcast app").selectOption("pocket_casts");
   await page.getByRole("button", { name: "Convert link" }).click();
 
-  await expect(page.getByRole("heading", { name: "Matching link..." })).toBeVisible();
-  await expect(page.getByText("Resolving the closest show or episode match.")).toBeVisible();
+  await expect(getSearchIndicator(page)).toBeVisible();
+  await expect(getSearchIndicator(page)).toContainText("Searching");
+  await expect(page.getByRole("heading", { name: "Matching link..." })).toHaveCount(0);
 });
 
 test("keeps the loading state visually complete when artwork is unavailable", async ({ page }) => {
