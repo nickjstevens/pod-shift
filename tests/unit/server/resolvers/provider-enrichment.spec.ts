@@ -108,10 +108,23 @@ describe("provider enrichment", () => {
         `);
       }
 
+      if (url.startsWith("https://api.podcastindex.org/api/1.0/podcasts/byitunesid?id=1491067458")) {
+        return jsonResponse({
+          feeds: []
+        });
+      }
+
+      if (url.startsWith("https://api.podcastindex.org/api/1.0/episodes/byitunesid?id=1000745595285")) {
+        return jsonResponse({
+          items: []
+        });
+      }
+
       throw new Error(`Unexpected fetch: ${url}`);
     });
 
     const first = await enrichSourceLink(normalizeInput(regressionLinks.appleToPocketCasts));
+    const afterFirstFetchCount = fetchSpy.mock.calls.length;
     const second = await enrichSourceLink(normalizeInput(regressionLinks.appleToPocketCasts));
 
     expect(first?.showTitle).toBe("Ungovernable Misfits");
@@ -122,7 +135,7 @@ describe("provider enrichment", () => {
     expect(second?.providerMappings.pocket_casts?.episodeUrl).toBe(
       first?.providerMappings.pocket_casts?.episodeUrl
     );
-    expect(fetchSpy).toHaveBeenCalledTimes(4);
+    expect(fetchSpy).toHaveBeenCalledTimes(afterFirstFetchCount);
   });
 
   it("captures Apple Podcasts mappings from Pocket Casts episode descriptions", async () => {

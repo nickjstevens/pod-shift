@@ -1,9 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { buildPreview } from "../../../../server/services/matchers/build-preview";
 
 describe("buildPreview", () => {
   it("returns preview metadata with artwork for matched content", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
     const preview = await buildPreview({
       inputUrl:
         "https://podcasts.apple.com/us/podcast/the-daily/id1200361736?i=1000654321001&utm_source=newsletter"
@@ -17,6 +19,7 @@ describe("buildPreview", () => {
     expect(preview.author).toBe("The New York Times");
     expect(preview.artworkUrl).toContain("the-daily-episode-001");
     expect(preview.availableTargets).toContain("pocket_casts");
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it("returns a complete preview response even when artwork cannot be resolved", async () => {

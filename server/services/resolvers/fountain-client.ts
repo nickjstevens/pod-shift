@@ -23,6 +23,19 @@ type FountainChildrenPayload = {
   }>;
 };
 
+type FountainSearchPayload = {
+  hits?: Array<{
+    _id?: string;
+    _type?: string;
+    info?: {
+      publisher?: string;
+      subtitle?: string;
+      title?: string;
+    };
+    links?: string[];
+  }>;
+};
+
 export type FountainShowMetadata = {
   artworkUrl: string | null;
   publisher: string | null;
@@ -31,12 +44,23 @@ export type FountainShowMetadata = {
 };
 
 const RELAY_BASE_URL = "https://relay.fountain.fm/api";
+const ALLOWED_FOUNTAIN_API_ORIGINS = new Set(["https://relay.fountain.fm", "https://graph.fountain.fm"]);
 
 async function postJson<T>(path: string, body: object) {
-  const response = await fetch(`${RELAY_BASE_URL}/${path}`, {
+  const url = new URL(path.startsWith("http") ? path : `${RELAY_BASE_URL}/${path}`);
+  if (!ALLOWED_FOUNTAIN_API_ORIGINS.has(url.origin) || url.protocol !== "https:") {
+    throw new Error(`Unsupported Fountain API origin: ${url.origin}`);
+  }
+
+  const response = await fetch(url, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Origin: "https://fountain.fm",
+      Referer: "https://fountain.fm/",
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
     },
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(8000)
@@ -57,6 +81,11 @@ function extractShowId(urlOrId: string) {
   const target = new URL(urlOrId);
   const parts = target.pathname.split("/").filter(Boolean);
   return parts.at(-1) ?? urlOrId;
+}
+
+function extractShowUrl(links: string[] | undefined) {
+  const showId = links?.find((link) => link.startsWith("show:id:"))?.split(":").at(-1);
+  return showId ? `https://fountain.fm/show/${showId}` : null;
 }
 
 export class FountainClient {
@@ -94,5 +123,47 @@ export class FountainClient {
     );
 
     return episode?._id ? `https://fountain.fm/episode/${episode._id}` : null;
+  }
+
+  async searchEpisodeByTitle(episodeTitle: string, podcastTitle?: string | null) {
+    const payload = await postJson<FountainSearchPayload>("https://graph.fountain.fm/api/search-content", {
+      query: episodeTitle,
+      types: ["EPISODE"]
+    });
+
+    const normalizedTarget = normalizeComparableTitle(episodeTitle);
+    const normalizedPodcastTitle = podcastTitle ? normalizeComparableTitle(podcastTitle) : null;
+    const hits = payload.hits ?? [];
+    const matchingHits = hits.filter((hit) => {
+      const normalizedHitTitle = normalizeComparableTitle(hit.info?.title ?? "");
+      if (normalizedHitTitle !== normalizedTarget) {
+        return false;
+      }
+
+      if (!normalizedPodcastTitle) {
+        return true;
+      }
+
+      const normalizedSubtitle = normalizeComparableTitle(hit.info?.subtitle ?? "");
+      const normalizedPublisher = normalizeComparableTitle(hit.info?.publisher ?? "");
+      return (
+        normalizedSubtitle === normalizedPodcastTitle ||
+        normalizedPublisher === normalizedPodcastTitle ||
+        normalizedSubtitle.includes(normalizedPodcastTitle) ||
+        normalizedPodcastTitle.includes(normalizedSubtitle) ||
+        normalizedPublisher.includes(normalizedPodcastTitle) ||
+        normalizedPodcastTitle.includes(normalizedPublisher)
+      );
+    });
+
+    const match = matchingHits[0] ?? null;
+    if (!match?._id) {
+      return null;
+    }
+
+    return {
+      episodeUrl: `https://fountain.fm/episode/${match._id}`,
+      showUrl: extractShowUrl(match.links)
+    };
   }
 }

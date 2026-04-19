@@ -23,12 +23,24 @@ export async function buildPreview(input: BuildPreviewInput): Promise<PreviewRes
     throw new ApiError(422, "unsupported_source", "This link is not from a supported podcast source.");
   }
 
-  let resolved = await resolveCatalogMatch(normalized);
+  let resolved: Awaited<ReturnType<typeof resolveCatalogMatch>> | Awaited<ReturnType<typeof resolveYoutubeBestEffort>> =
+    await resolveCatalogMatch(normalized);
   if (!resolved && (normalized.sourceProviderId === "youtube" || normalized.sourceProviderId === "youtube_music")) {
     resolved = await resolveYoutubeBestEffort(normalized);
   }
 
-  const enrichment = resolved?.enrichment ?? (await enrichSourceLink(normalized));
+  const canUseResolvedPreviewWithoutEnrichment =
+    resolved?.matchedBy === "provider_id" &&
+    Boolean(resolved.show?.title) &&
+    Boolean(resolved.show?.author) &&
+    Boolean(resolved.show?.artworkUrl || resolved.episode?.artworkUrl) &&
+    (normalized.contentKind !== "episode" || Boolean(resolved.episode?.title));
+
+  const needsEnrichment = !canUseResolvedPreviewWithoutEnrichment;
+
+  const enrichment =
+    (resolved && "enrichment" in resolved ? resolved.enrichment : null) ??
+    (needsEnrichment ? await enrichSourceLink(normalized) : null);
   const showTitle = resolved?.show?.title ?? enrichment?.showTitle ?? null;
   const episodeTitle = resolved?.episode?.title ?? enrichment?.episodeTitle ?? null;
   const author = resolved?.show?.author ?? enrichment?.author ?? null;

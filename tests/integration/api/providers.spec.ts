@@ -11,7 +11,7 @@ describe("/api/providers", () => {
     const response = listProvidersHandler();
 
     expect(response.statusCode).toBe(200);
-    expect(response.body.providers).toHaveLength(5);
+    expect(response.body.providers).toHaveLength(8);
     expect(response.body.providers.every((provider) => provider.supportsOutput)).toBe(true);
   });
 

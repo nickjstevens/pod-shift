@@ -170,6 +170,180 @@ describe("/api/convert direct conversions", () => {
     );
   });
 
+  it("converts the named Apple Podcasts regression link into Fountain", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      const url = typeof input === "string" ? input : input.toString();
+
+      if (url.startsWith("https://itunes.apple.com/lookup")) {
+        return jsonResponse({
+          results: [
+            {
+              wrapperType: "collection",
+              collectionId: 1491067458,
+              collectionName: "Ungovernable Misfits",
+              artistName: "Ungovernable Misfits",
+              feedUrl: "https://serve.podhome.fm/rss/23c0e268-b6a5-4ae7-b73a-1bb0cf853978",
+              trackViewUrl: "https://podcasts.apple.com/gb/podcast/ungovernable-misfits/id1491067458"
+            },
+            {
+              wrapperType: "track",
+              trackId: 1000745595285,
+              trackName: "Privacy, BTC and XMR with Riccardo Spagni | FREEDOM TECH FRIDAY 26",
+              collectionId: 1491067458,
+              trackViewUrl:
+                "https://podcasts.apple.com/gb/podcast/ungovernable-misfits/id1491067458?i=1000745595285"
+            }
+          ]
+        });
+      }
+
+      if (url === "https://serve.podhome.fm/rss/23c0e268-b6a5-4ae7-b73a-1bb0cf853978") {
+        return textResponse(`
+          <rss>
+            <channel>
+              <title>Ungovernable Misfits</title>
+              <link>https://serve.podhome.fm/ugmf</link>
+              <itunes:author>Ungovernable Misfits</itunes:author>
+              <itunes:image href="https://assets.podhome.fm/show.jpg" />
+              <item>
+                <title>Privacy, BTC and XMR with Riccardo Spagni | FREEDOM TECH FRIDAY 26</title>
+                <link>https://serve.podhome.fm/episodepage/ugmf/privacy-btc</link>
+                <guid>privacy-guid-001</guid>
+                <itunes:image href="https://assets.podhome.fm/episode.jpg" />
+                <itunes:author>Ungovernable Misfits</itunes:author>
+                <enclosure url="https://cdn.example.com/privacy.mp3" />
+              </item>
+            </channel>
+          </rss>
+        `);
+      }
+
+      if (url === "https://serve.podhome.fm/ugmf") {
+        return textResponse(`
+          <html>
+            <body>
+              <a href="https://fountain.fm/show/352598">Fountain</a>
+            </body>
+          </html>
+        `);
+      }
+
+      if (url === "https://relay.fountain.fm/api/load-content-children") {
+        expect(init?.method).toBe("POST");
+        return jsonResponse({
+          hits: [
+            {
+              _id: "fountain-episode-001",
+              info: {
+                title: "Privacy, BTC and XMR with Riccardo Spagni | FREEDOM TECH FRIDAY 26"
+              }
+            }
+          ]
+        });
+      }
+
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    const response = await handleConvertRequest({
+      inputUrl: regressionLinks.appleToPocketCasts,
+      targetProvider: "fountain",
+      preferTimestamp: true
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.targetUrl).toBe("https://fountain.fm/episode/fountain-episode-001");
+  });
+
+  it("falls back to Fountain episode search when the show-child lookup is empty", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      const url = typeof input === "string" ? input : input.toString();
+
+      if (url.startsWith("https://itunes.apple.com/lookup")) {
+        return jsonResponse({
+          results: [
+            {
+              wrapperType: "collection",
+              collectionId: 1491067458,
+              collectionName: "Ungovernable Misfits",
+              artistName: "Ungovernable Misfits",
+              feedUrl: "https://serve.podhome.fm/rss/23c0e268-b6a5-4ae7-b73a-1bb0cf853978",
+              trackViewUrl: "https://podcasts.apple.com/gb/podcast/ungovernable-misfits/id1491067458"
+            },
+            {
+              wrapperType: "track",
+              trackId: 1000745595285,
+              trackName: "Privacy, BTC and XMR with Riccardo Spagni | FREEDOM TECH FRIDAY 26",
+              collectionId: 1491067458,
+              trackViewUrl:
+                "https://podcasts.apple.com/gb/podcast/ungovernable-misfits/id1491067458?i=1000745595285"
+            }
+          ]
+        });
+      }
+
+      if (url === "https://serve.podhome.fm/rss/23c0e268-b6a5-4ae7-b73a-1bb0cf853978") {
+        return textResponse(`
+          <rss>
+            <channel>
+              <title>Ungovernable Misfits</title>
+              <link>https://serve.podhome.fm/ugmf</link>
+              <itunes:author>Ungovernable Misfits</itunes:author>
+              <item>
+                <title>Privacy, BTC and XMR with Riccardo Spagni | FREEDOM TECH FRIDAY 26</title>
+                <guid>privacy-guid-001</guid>
+              </item>
+            </channel>
+          </rss>
+        `);
+      }
+
+      if (url === "https://serve.podhome.fm/ugmf") {
+        return textResponse(`
+          <html>
+            <body>
+              <a href="https://fountain.fm/show/352598">Fountain</a>
+            </body>
+          </html>
+        `);
+      }
+
+      if (url === "https://relay.fountain.fm/api/load-content-children") {
+        expect(init?.method).toBe("POST");
+        return jsonResponse({ hits: [] });
+      }
+
+      if (url === "https://graph.fountain.fm/api/search-content") {
+        expect(init?.method).toBe("POST");
+        return jsonResponse({
+          hits: [
+            {
+              _id: "fountain-search-episode-001",
+              _type: "EPISODE",
+              info: {
+                title: "Privacy, BTC and XMR with Riccardo Spagni | FREEDOM TECH FRIDAY 26",
+                subtitle: "Ungovernable Misfits",
+                publisher: "Ungovernable Misfits"
+              },
+              links: ["show:id:sbfNnARG7zj3nL6Xfill"]
+            }
+          ]
+        });
+      }
+
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    const response = await handleConvertRequest({
+      inputUrl: regressionLinks.appleToPocketCasts,
+      targetProvider: "fountain",
+      preferTimestamp: true
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.targetUrl).toBe("https://fountain.fm/episode/fountain-search-episode-001");
+  });
+
   it("converts the named Pocket Casts regression link into Fountain", async () => {
     const canonicalUrl =
       "https://pocketcasts.com/podcast/the-peter-mccormack-show/b3968d50-b3b5-0135-9e5f-5bb073f92b78/161-lyn-alden-why-everything-feels-harder-debt-inflation-the-system/fcfc426a-a7ce-4374-9a9c-d51451bb06ab";

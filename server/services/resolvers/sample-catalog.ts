@@ -54,6 +54,18 @@ const sampleCatalog: CatalogEntry[] = [
         makeShowMapping("antennapod", {
           feedUrl: "https://feeds.simplecast.com/54nAGcIl",
           showUrl: "https://antennapod.org/p/?url=https%253A%252F%252Ffeeds.simplecast.com%252F54nAGcIl"
+        }),
+        makeShowMapping("youtube", {
+          playlistId: "PLdailypodcast001",
+          showUrl: "https://www.youtube.com/playlist?list=PLdailypodcast001"
+        }),
+        makeShowMapping("youtube_music", {
+          playlistId: "PLdailypodcast001",
+          showUrl: "https://music.youtube.com/playlist?list=PLdailypodcast001"
+        }),
+        makeShowMapping("spotify", {
+          showId: "dailyspotifyshow001",
+          showUrl: "https://open.spotify.com/show/dailyspotifyshow001"
         })
       ])
     },
@@ -85,6 +97,18 @@ const sampleCatalog: CatalogEntry[] = [
           }),
           makeShowMapping("antennapod", {
             episodeUrl: "https://antennapod.org/p/?url=https%253A%252F%252Ffeeds.simplecast.com%252F54nAGcIl"
+          }),
+          makeShowMapping("youtube", {
+            videoId: "yt-episode-daily-001",
+            episodeUrl: "https://www.youtube.com/watch?v=yt-episode-daily-001"
+          }),
+          makeShowMapping("youtube_music", {
+            videoId: "yt-episode-daily-001",
+            episodeUrl: "https://music.youtube.com/watch?v=yt-episode-daily-001"
+          }),
+          makeShowMapping("spotify", {
+            episodeId: "dailyspotifyepisode001",
+            episodeUrl: "https://open.spotify.com/episode/dailyspotifyepisode001"
           })
         ])
       }

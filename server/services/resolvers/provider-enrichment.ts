@@ -124,6 +124,7 @@ function addDeterministicShowMappings(enrichment: ProviderEnrichment, itunesId: 
 async function enrichAppleSource(source: NormalizedSourceLink) {
   const appleClient = new AppleSearchClient();
   const pocketCastsClient = new PocketCastsClient();
+  const fountainClient = new FountainClient();
   const podcastIndex = new PodcastIndexClient();
   const enrichment = baseEnrichment(source);
   const lookup = await appleClient.lookupShow({
@@ -164,9 +165,86 @@ async function enrichAppleSource(source: NormalizedSourceLink) {
         enrichment.enclosureUrl = feed.episode?.enclosureUrl ?? null;
         enrichment.providerCanonicalUrl = feed.showUrl ?? enrichment.providerCanonicalUrl;
         enrichment.resolvedVia.push("rss_feed");
+
+        if (feed.showUrl) {
+          try {
+            const providerLinks = await appleClient.loadProviderLinks(feed.showUrl);
+
+            addMapping(enrichment, "pocket_casts", {
+              showUrl: providerLinks.pocket_casts
+            });
+            addMapping(enrichment, "fountain", {
+              showUrl: providerLinks.fountain
+            });
+            addMapping(enrichment, "castro", {
+              showUrl: providerLinks.castro
+            });
+            addMapping(enrichment, "antennapod", {
+              showUrl: providerLinks.antennapod
+            });
+
+            if (providerLinks.pocket_casts || providerLinks.fountain) {
+              enrichment.resolvedVia.push("provider_links_page");
+            }
+          } catch {
+            enrichment.warnings.push("Provider links could not be refreshed from the show page.");
+          }
+        }
       }
     } catch {
       enrichment.warnings.push("Feed metadata could not be refreshed from the source feed.");
+    }
+  }
+
+  if (lookup.episode?.episodeId && enrichment.providerMappings.pocket_casts?.showUrl && enrichment.episodeTitle) {
+    try {
+      const pocketEpisodeUrl = await pocketCastsClient.findEpisodeOnShowPage(
+        enrichment.providerMappings.pocket_casts.showUrl,
+        enrichment.episodeTitle
+      );
+      addMapping(enrichment, "pocket_casts", {
+        episodeUrl: pocketEpisodeUrl ?? undefined
+      });
+      if (pocketEpisodeUrl) {
+        enrichment.resolvedVia.push("pocket_casts_show_page");
+      }
+    } catch {
+      enrichment.warnings.push("Pocket Casts show-page lookup failed.");
+    }
+  }
+
+  if (lookup.episode?.episodeId && enrichment.providerMappings.fountain?.showUrl && enrichment.episodeTitle) {
+    try {
+      const fountainEpisodeUrl = await fountainClient.findEpisodeOnShow(
+        enrichment.providerMappings.fountain.showUrl,
+        enrichment.episodeTitle
+      );
+      addMapping(enrichment, "fountain", {
+        episodeUrl: fountainEpisodeUrl ?? undefined
+      });
+      if (fountainEpisodeUrl) {
+        enrichment.resolvedVia.push("fountain_show_page");
+      }
+    } catch {
+      enrichment.warnings.push("Fountain show-page lookup failed.");
+    }
+  }
+
+  if (lookup.episode?.episodeId && enrichment.episodeTitle && !enrichment.providerMappings.fountain?.episodeUrl) {
+    try {
+      const fountainSearchMatch = await fountainClient.searchEpisodeByTitle(
+        enrichment.episodeTitle,
+        enrichment.showTitle
+      );
+      addMapping(enrichment, "fountain", {
+        showUrl: fountainSearchMatch?.showUrl ?? undefined,
+        episodeUrl: fountainSearchMatch?.episodeUrl ?? undefined
+      });
+      if (fountainSearchMatch?.episodeUrl) {
+        enrichment.resolvedVia.push("fountain_search");
+      }
+    } catch {
+      enrichment.warnings.push("Fountain episode search failed.");
     }
   }
 
@@ -187,7 +265,7 @@ async function enrichAppleSource(source: NormalizedSourceLink) {
       });
     }
 
-    if (enrichment.episodeTitle) {
+    if (enrichment.episodeTitle && !enrichment.providerMappings.pocket_casts?.episodeUrl) {
       try {
         const pocketEpisodeUrl = await pocketCastsClient.buildEpisodeShortUrlByTitle(
           enrichment.episodeTitle,

@@ -26,6 +26,16 @@ describe("tracking stripping, timestamp parsing, and confidence thresholds", () 
     expect(normalized.strippedTrackingKeys).toContain("si");
   });
 
+  it("treats explicit playlist URLs as show links even when a video id is present", () => {
+    const normalized = normalizeInput(
+      "https://www.youtube.com/playlist?list=PLdailypodcast001&v=yt-episode-daily-001"
+    );
+
+    expect(normalized.sourceProviderId).toBe("youtube");
+    expect(normalized.contentKind).toBe("show");
+    expect(normalized.providerEntityId).toBe("PLdailypodcast001");
+  });
+
   it("enforces a minimum confidence threshold for best-effort matches", () => {
     expect(meetsConfidenceThreshold(0.89)).toBe(true);
     expect(meetsConfidenceThreshold(0.68)).toBe(false);

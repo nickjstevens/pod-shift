@@ -26,7 +26,10 @@ describe("provider registry", () => {
       "pocket_casts",
       "fountain",
       "castro",
-      "antennapod"
+      "antennapod",
+      "youtube",
+      "youtube_music",
+      "spotify"
     ]);
   });
 });
