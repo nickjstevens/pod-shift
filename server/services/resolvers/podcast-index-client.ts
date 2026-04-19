@@ -106,6 +106,23 @@ export class PodcastIndexClient {
     return payload.feeds?.[0] ?? null;
   }
 
+  async lookupById(feedId: string) {
+    if (!this.authHeaders) {
+      return null;
+    }
+
+    const response = await fetch(`${this.baseUrl}/podcasts/byfeedid?id=${encodeURIComponent(feedId)}`, {
+      headers: this.authHeaders
+    });
+
+    if (!response.ok) {
+      throw new Error(`Podcast Index feed id lookup failed with ${response.status}`);
+    }
+
+    const payload = (await response.json()) as PodcastIndexFeedsResponse;
+    return payload.feeds?.[0] ?? null;
+  }
+
   async lookupEpisodeByItunesId(itunesEpisodeId: string) {
     if (!this.authHeaders) {
       return null;
@@ -134,6 +151,23 @@ export class PodcastIndexClient {
 
     if (!response.ok) {
       throw new Error(`Podcast Index episode by id lookup failed with ${response.status}`);
+    }
+
+    const payload = (await response.json()) as PodcastIndexEpisodesResponse;
+    return payload.items?.[0] ?? null;
+  }
+
+  async lookupEpisodeByGuid(guid: string) {
+    if (!this.authHeaders) {
+      return null;
+    }
+
+    const response = await fetch(`${this.baseUrl}/episodes/byguid?guid=${encodeURIComponent(guid)}`, {
+      headers: this.authHeaders
+    });
+
+    if (!response.ok) {
+      throw new Error(`Podcast Index episode by guid lookup failed with ${response.status}`);
     }
 
     const payload = (await response.json()) as PodcastIndexEpisodesResponse;

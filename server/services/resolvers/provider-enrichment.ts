@@ -208,6 +208,7 @@ async function enrichAppleSource(source: NormalizedSourceLink) {
 async function enrichPocketCastsSource(source: NormalizedSourceLink) {
   const pocketCastsClient = new PocketCastsClient();
   const fountainClient = new FountainClient();
+  const podcastIndex = new PodcastIndexClient();
   const enrichment = baseEnrichment(source);
   const metadata = await pocketCastsClient.fetchMetadata(source.normalizedUrl);
 
@@ -252,6 +253,38 @@ async function enrichPocketCastsSource(source: NormalizedSourceLink) {
     }
   }
 
+  if (!enrichment.providerMappings.apple_podcasts?.showId && enrichment.showTitle) {
+    try {
+      const showMatches = await podcastIndex.searchByTitle(enrichment.showTitle);
+      const matchedShow =
+        showMatches.find(
+          (show) => show.itunesId && show.title.trim().toLowerCase() === enrichment.showTitle?.trim().toLowerCase()
+        ) ?? showMatches.find((show) => show.itunesId);
+
+      if (matchedShow?.itunesId) {
+        const itunesId = String(matchedShow.itunesId);
+        addMapping(enrichment, "apple_podcasts", {
+          showId: itunesId,
+          showUrl: `https://podcasts.apple.com/us/podcast/id${itunesId}`
+        });
+        addDeterministicShowMappings(enrichment, itunesId, matchedShow.url);
+
+        if (enrichment.episodeTitle) {
+          const piEpisode = await podcastIndex.findEpisodeByTitle(matchedShow.id, enrichment.episodeTitle);
+          if (piEpisode?.id) {
+            addMapping(enrichment, "fountain", {
+              episodeId: String(piEpisode.id),
+              episodeUrl: `https://fountain.fm/episode/${piEpisode.id}`
+            });
+            enrichment.episodeGuid = piEpisode.guid ?? enrichment.episodeGuid;
+          }
+        }
+      }
+    } catch {
+      enrichment.warnings.push("Podcast Index title bridge failed for Pocket Casts metadata.");
+    }
+  }
+
   if (fountainSourceUrl) {
     try {
       const resolvedFountainUrl = (await resolveRedirects(fountainSourceUrl)).toString();
@@ -271,6 +304,99 @@ async function enrichPocketCastsSource(source: NormalizedSourceLink) {
       enrichment.resolvedVia.push("fountain_public_api");
     } catch {
       enrichment.warnings.push("Fountain metadata could not be refreshed from the source episode.");
+    }
+  }
+
+  return enrichment;
+}
+
+async function enrichFountainSource(source: NormalizedSourceLink) {
+  const enrichment = baseEnrichment(source);
+  const podcastIndex = new PodcastIndexClient();
+  const fountainClient = new FountainClient();
+
+  if (source.contentKind === "show") {
+    const show = await podcastIndex.lookupById(source.providerEntityId ?? source.resolutionHints.showId ?? "");
+    if (!show) {
+      return null;
+    }
+
+    enrichment.showTitle = show.title;
+    enrichment.author = show.author;
+    enrichment.artworkUrl = show.image ?? null;
+    enrichment.feedUrl = show.url;
+    enrichment.resolvedVia.push("podcast_index_show_id_lookup");
+
+    addMapping(enrichment, "fountain", {
+      showId: String(show.id),
+      showUrl: `https://fountain.fm/show/${show.id}`
+    });
+
+    if (show.itunesId) {
+      const itunesId = String(show.itunesId);
+      addMapping(enrichment, "apple_podcasts", {
+        showId: itunesId,
+        showUrl: `https://podcasts.apple.com/us/podcast/id${itunesId}`
+      });
+      addDeterministicShowMappings(enrichment, itunesId, show.url);
+    }
+
+    return enrichment;
+  }
+
+  const episode = await podcastIndex.lookupEpisodeById(source.providerEntityId ?? source.resolutionHints.episodeId ?? "");
+  if (!episode) {
+    return null;
+  }
+
+  enrichment.episodeTitle = episode.title;
+  enrichment.episodeGuid = episode.guid ?? null;
+  enrichment.artworkUrl = episode.image ?? null;
+  enrichment.resolvedVia.push("podcast_index_episode_id_lookup");
+  addMapping(enrichment, "fountain", {
+    episodeId: String(episode.id),
+    episodeUrl: `https://fountain.fm/episode/${episode.id}`
+  });
+
+  const show = episode.feedId ? await podcastIndex.lookupById(String(episode.feedId)) : null;
+  if (show) {
+    enrichment.showTitle = show.title;
+    enrichment.author = show.author;
+    enrichment.feedUrl = show.url;
+    addMapping(enrichment, "fountain", {
+      showId: String(show.id),
+      showUrl: `https://fountain.fm/show/${show.id}`
+    });
+
+    if (show.itunesId) {
+      const itunesId = String(show.itunesId);
+      addMapping(enrichment, "apple_podcasts", {
+        showId: itunesId,
+        showUrl: `https://podcasts.apple.com/us/podcast/id${itunesId}`
+      });
+      addDeterministicShowMappings(enrichment, itunesId, show.url);
+
+      if (enrichment.episodeTitle) {
+        try {
+          const pocketEpisodeUrl = await new PocketCastsClient().buildEpisodeShortUrlByTitle(
+            enrichment.episodeTitle,
+            show.title
+          );
+          addMapping(enrichment, "pocket_casts", {
+            episodeUrl: pocketEpisodeUrl ?? undefined
+          });
+        } catch {
+          enrichment.warnings.push("Pocket Casts episode lookup failed.");
+        }
+      }
+    }
+  } else {
+    try {
+      const showData = await fountainClient.loadShow(source.resolutionHints.showId ?? "");
+      enrichment.showTitle = showData?.showTitle ?? enrichment.showTitle;
+      enrichment.author = showData?.publisher ?? enrichment.author;
+    } catch {
+      enrichment.warnings.push("Fountain show metadata lookup failed.");
     }
   }
 
@@ -399,6 +525,8 @@ async function resolveUncached(source: NormalizedSourceLink) {
       return enrichAppleSource(source);
     case "pocket_casts":
       return enrichPocketCastsSource(source);
+    case "fountain":
+      return enrichFountainSource(source);
     case "castro":
       return enrichCastroSource(source);
     case "antennapod":

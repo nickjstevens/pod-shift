@@ -28,10 +28,14 @@ function textResponse(payload: string) {
 describe("provider enrichment", () => {
   beforeEach(() => {
     resetProviderEnrichmentCache();
+    process.env.NUXT_PODCAST_INDEX_API_KEY = "test-key";
+    process.env.NUXT_PODCAST_INDEX_API_SECRET = "test-secret";
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    delete process.env.NUXT_PODCAST_INDEX_API_KEY;
+    delete process.env.NUXT_PODCAST_INDEX_API_SECRET;
   });
 
   it("reuses cached Apple enrichment for repeated previews of the same link", async () => {
@@ -163,6 +167,110 @@ describe("provider enrichment", () => {
     expect(enrichment?.providerMappings.apple_podcasts?.episodeId).toBe("1000758476274");
     expect(enrichment?.providerMappings.apple_podcasts?.episodeUrl).toBe(
       "https://podcasts.apple.com/gb/podcast/161-lyn-alden-the-inevitable-collapse-of/id1317356120?i=1000758476274"
+    );
+  });
+
+  it("bridges Pocket Casts show metadata through Podcast Index when direct Apple links are missing", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = typeof input === "string" ? input : input.toString();
+
+      if (url === "https://pca.st/episode/pocket-episode-42") {
+        return textResponse(`
+          <html>
+            <head>
+              <meta property="og:title" content="Episode Forty Two" />
+              <meta property="og:url" content="https://pocketcasts.com/podcast/example-show/show-uuid/episode-forty-two/pocket-episode-42" />
+            </head>
+            <body>
+              <h2>Episode Description</h2>
+              <div><div>No external links here.</div></div>
+            </body>
+          </html>
+        `);
+      }
+
+      if (url.startsWith("https://pca.st/oembed.json?url=")) {
+        return jsonResponse({
+          author_name: "Example Show",
+          title: "Episode Forty Two - Example Show"
+        });
+      }
+
+      if (url.startsWith("https://api.podcastindex.org/api/1.0/search/byterm?q=Example%20Show")) {
+        return jsonResponse({
+          feeds: [
+            {
+              id: 777,
+              title: "Example Show",
+              author: "Example Host",
+              url: "https://example.com/feed.xml",
+              itunesId: 1234567890
+            }
+          ]
+        });
+      }
+
+      if (url.startsWith("https://api.podcastindex.org/api/1.0/episodes/byfeedid?id=777")) {
+        return jsonResponse({
+          items: []
+        });
+      }
+
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    const enrichment = await enrichSourceLink(normalizeInput("https://pca.st/episode/pocket-episode-42"));
+
+    expect(enrichment?.providerMappings.apple_podcasts?.showId).toBe("1234567890");
+    expect(enrichment?.providerMappings.castro?.showUrl).toBe("https://castro.fm/itunes/1234567890");
+    expect(enrichment?.providerMappings.antennapod?.showUrl).toBe(
+      "https://antennapod.org/p/?url=https%253A%252F%252Fexample.com%252Ffeed.xml"
+    );
+  });
+
+  it("uses Podcast Index as the anchor bridge for Fountain episode sources", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = typeof input === "string" ? input : input.toString();
+
+      if (url.startsWith("https://api.podcastindex.org/api/1.0/episodes/byid?id=epi-abc")) {
+        return jsonResponse({
+          items: [
+            {
+              id: 9988,
+              title: "Episode from Fountain",
+              guid: "guid-9988",
+              feedId: 4433,
+              image: "https://img.example.com/episode.jpg"
+            }
+          ]
+        });
+      }
+
+      if (url.startsWith("https://api.podcastindex.org/api/1.0/podcasts/byfeedid?id=4433")) {
+        return jsonResponse({
+          feeds: [
+            {
+              id: 4433,
+              title: "Fountain Anchored Show",
+              author: "Anchor Host",
+              url: "https://example.com/fountain-feed.xml",
+              image: "https://img.example.com/show.jpg",
+              itunesId: 987654321
+            }
+          ]
+        });
+      }
+
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    const enrichment = await enrichSourceLink(normalizeInput("https://fountain.fm/episode/epi-abc"));
+
+    expect(enrichment?.providerMappings.apple_podcasts?.showId).toBe("987654321");
+    expect(enrichment?.providerMappings.fountain?.episodeUrl).toBe("https://fountain.fm/episode/9988");
+    expect(enrichment?.providerMappings.pocket_casts?.showUrl).toBe("https://pca.st/itunes/987654321");
+    expect(enrichment?.providerMappings.antennapod?.showUrl).toBe(
+      "https://antennapod.org/p/?url=https%253A%252F%252Fexample.com%252Ffountain-feed.xml"
     );
   });
 });
