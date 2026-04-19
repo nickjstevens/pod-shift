@@ -15,6 +15,8 @@ const providerLabels: Record<ConvertSuccessResponse["targetProvider"], string> =
   apple_podcasts: "Apple Podcasts",
   pocket_casts: "Pocket Casts",
   fountain: "Fountain",
+  castro: "Castro",
+  antennapod: "AntennaPod",
   youtube: "YouTube",
   youtube_music: "YouTube Music",
   spotify: "Spotify"

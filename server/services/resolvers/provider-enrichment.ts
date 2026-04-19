@@ -9,6 +9,7 @@ import { readRuntimeConfig } from "../../utils/runtime-config";
 import { AppleSearchClient } from "./apple-search-client";
 import { FountainClient } from "./fountain-client";
 import { PocketCastsClient } from "./pocket-casts-client";
+import { PodcastIndexClient } from "./podcast-index-client";
 import { resolveRedirects } from "../normalizers/resolve-redirects";
 
 const cache = new Map<
@@ -95,40 +96,35 @@ function buildAppleShowUrl(source: NormalizedSourceLink) {
   return target.toString();
 }
 
-function readAppleMappingFromUrl(value: string): ProviderContentMapping | null {
-  try {
-    const url = new URL(value);
-    if (url.hostname !== "podcasts.apple.com") {
-      return null;
-    }
+function buildAntennaPodShowUrl(feedUrl: string) {
+  const onceEncoded = encodeURIComponent(feedUrl);
+  const twiceEncoded = encodeURIComponent(onceEncoded);
+  return `https://antennapod.org/p/?url=${twiceEncoded}`;
+}
 
-    const showIdMatch = url.pathname.match(/\/id(\d+)/u);
-    if (!showIdMatch) {
-      return null;
-    }
+function addDeterministicShowMappings(enrichment: ProviderEnrichment, itunesId: string, feedUrl?: string | null) {
+  addMapping(enrichment, "pocket_casts", {
+    showId: itunesId,
+    showUrl: `https://pca.st/itunes/${itunesId}`
+  });
 
-    const showId = showIdMatch[1];
-    const episodeId = url.searchParams.get("i") ?? undefined;
-    const showUrl = new URL(url.toString());
-    showUrl.searchParams.delete("i");
-    showUrl.searchParams.delete("t");
-    showUrl.searchParams.delete("time_continue");
-    showUrl.searchParams.delete("start");
+  addMapping(enrichment, "castro", {
+    showId: itunesId,
+    showUrl: `https://castro.fm/itunes/${itunesId}`
+  });
 
-    return {
-      showId,
-      showUrl: showUrl.toString(),
-      episodeId,
-      episodeUrl: episodeId ? url.toString() : undefined
-    };
-  } catch {
-    return null;
+  if (feedUrl) {
+    addMapping(enrichment, "antennapod", {
+      feedUrl,
+      showUrl: buildAntennaPodShowUrl(feedUrl)
+    });
   }
 }
 
 async function enrichAppleSource(source: NormalizedSourceLink) {
   const appleClient = new AppleSearchClient();
   const pocketCastsClient = new PocketCastsClient();
+  const podcastIndex = new PodcastIndexClient();
   const enrichment = baseEnrichment(source);
   const lookup = await appleClient.lookupShow({
     showId: source.resolutionHints.showId ?? source.providerEntityId ?? "",
@@ -155,6 +151,7 @@ async function enrichAppleSource(source: NormalizedSourceLink) {
     episodeUrl: lookup.episode?.canonicalUrl ?? (source.contentKind === "episode" ? source.normalizedUrl : undefined),
     feedUrl: lookup.feedUrl ?? undefined
   });
+  addDeterministicShowMappings(enrichment, lookup.showId, lookup.feedUrl);
 
   if (lookup.feedUrl) {
     try {
@@ -167,36 +164,41 @@ async function enrichAppleSource(source: NormalizedSourceLink) {
         enrichment.enclosureUrl = feed.episode?.enclosureUrl ?? null;
         enrichment.providerCanonicalUrl = feed.showUrl ?? enrichment.providerCanonicalUrl;
         enrichment.resolvedVia.push("rss_feed");
-
-        if (feed.showUrl) {
-          try {
-            const providerLinks = await appleClient.loadProviderLinks(feed.showUrl);
-            enrichment.resolvedVia.push("provider_links");
-
-            if (providerLinks.pocket_casts) {
-              const pocketEpisodeUrl =
-                enrichment.episodeTitle != null
-                  ? await pocketCastsClient.findEpisodeOnShowPage(providerLinks.pocket_casts, enrichment.episodeTitle)
-                  : null;
-
-              addMapping(enrichment, "pocket_casts", {
-                showUrl: providerLinks.pocket_casts,
-                episodeUrl: pocketEpisodeUrl ?? undefined
-              });
-            }
-
-            if (providerLinks.fountain) {
-              addMapping(enrichment, "fountain", {
-                showUrl: providerLinks.fountain
-              });
-            }
-          } catch {
-            enrichment.warnings.push("Destination provider links could not be refreshed from the show page.");
-          }
-        }
       }
     } catch {
       enrichment.warnings.push("Feed metadata could not be refreshed from the source feed.");
+    }
+  }
+
+  const piShow = await podcastIndex.lookupByItunesId(lookup.showId);
+  if (piShow) {
+    addMapping(enrichment, "fountain", {
+      showId: String(piShow.id),
+      showUrl: `https://fountain.fm/show/${piShow.id}`
+    });
+  }
+
+  if (lookup.episode?.episodeId) {
+    const piEpisode = await podcastIndex.lookupEpisodeByItunesId(lookup.episode.episodeId);
+    if (piEpisode) {
+      addMapping(enrichment, "fountain", {
+        episodeId: String(piEpisode.id),
+        episodeUrl: `https://fountain.fm/episode/${piEpisode.id}`
+      });
+    }
+
+    if (enrichment.episodeTitle) {
+      try {
+        const pocketEpisodeUrl = await pocketCastsClient.buildEpisodeShortUrlByTitle(
+          enrichment.episodeTitle,
+          enrichment.showTitle ?? undefined
+        );
+        addMapping(enrichment, "pocket_casts", {
+          episodeUrl: pocketEpisodeUrl ?? undefined
+        });
+      } catch {
+        enrichment.warnings.push("Pocket Casts episode lookup failed.");
+      }
     }
   }
 
@@ -233,8 +235,21 @@ async function enrichPocketCastsSource(source: NormalizedSourceLink) {
   const appleSourceUrl = candidateUrls.find((url) => url.includes("podcasts.apple.com/"));
 
   if (appleSourceUrl) {
-    const appleMapping = readAppleMappingFromUrl(appleSourceUrl);
-    addMapping(enrichment, "apple_podcasts", appleMapping ?? undefined);
+    try {
+      const appleUrl = new URL(appleSourceUrl);
+      const showId = appleUrl.pathname.match(/\/id(\d+)/u)?.[1];
+      if (showId) {
+        addMapping(enrichment, "apple_podcasts", {
+          showId,
+          showUrl: appleUrl.toString().split("?")[0],
+          episodeId: appleUrl.searchParams.get("i") ?? undefined,
+          episodeUrl: appleUrl.searchParams.get("i") ? appleUrl.toString() : undefined
+        });
+        addDeterministicShowMappings(enrichment, showId, enrichment.feedUrl);
+      }
+    } catch {
+      enrichment.warnings.push("Apple mapping could not be extracted from Pocket Casts metadata.");
+    }
   }
 
   if (fountainSourceUrl) {
@@ -262,12 +277,132 @@ async function enrichPocketCastsSource(source: NormalizedSourceLink) {
   return enrichment;
 }
 
+function readMetaTag(content: string, property: string) {
+  const match = content.match(new RegExp(`<meta\\s+property=["']${property}["']\\s+content=["']([^"']+)["']`, "iu"));
+  return match?.[1]?.trim() ?? null;
+}
+
+async function enrichCastroSource(source: NormalizedSourceLink) {
+  const enrichment = baseEnrichment(source);
+  const podcastIndex = new PodcastIndexClient();
+
+  const response = await fetch(source.normalizedUrl, {
+    signal: AbortSignal.timeout(8000)
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const html = await response.text();
+  const ogTitle = readMetaTag(html, "og:title");
+  const itunesId =
+    source.resolutionHints.showId ??
+    html.match(/https:\/\/castro\.fm\/itunes\/(\d+)/u)?.[1] ??
+    html.match(/id(\d{5,})/u)?.[1] ??
+    null;
+
+  enrichment.providerCanonicalUrl = response.url || enrichment.providerCanonicalUrl;
+  enrichment.resolvedVia.push("castro_page_scrape");
+  if (source.contentKind === "episode") {
+    enrichment.episodeTitle = ogTitle;
+  } else {
+    enrichment.showTitle = ogTitle;
+  }
+
+  if (!itunesId) {
+    return enrichment;
+  }
+
+  addMapping(enrichment, "castro", {
+    showId: itunesId,
+    showUrl: `https://castro.fm/itunes/${itunesId}`
+  });
+
+  const piShow = await podcastIndex.lookupByItunesId(itunesId);
+  if (!piShow) {
+    return enrichment;
+  }
+
+  enrichment.showTitle = enrichment.showTitle ?? piShow.title;
+  enrichment.author = piShow.author;
+  enrichment.artworkUrl = piShow.image ?? null;
+  enrichment.feedUrl = piShow.url;
+
+  addMapping(enrichment, "apple_podcasts", {
+    showId: itunesId,
+    showUrl: `https://podcasts.apple.com/us/podcast/id${itunesId}`
+  });
+  addDeterministicShowMappings(enrichment, itunesId, piShow.url);
+  addMapping(enrichment, "fountain", {
+    showId: String(piShow.id),
+    showUrl: `https://fountain.fm/show/${piShow.id}`
+  });
+
+  if (enrichment.episodeTitle) {
+    const episode = await podcastIndex.findEpisodeByTitle(piShow.id, enrichment.episodeTitle);
+    if (episode) {
+      addMapping(enrichment, "fountain", {
+        episodeId: String(episode.id),
+        episodeUrl: `https://fountain.fm/episode/${episode.id}`
+      });
+    }
+  }
+
+  return enrichment;
+}
+
+async function enrichAntennaPodSource(source: NormalizedSourceLink) {
+  const enrichment = baseEnrichment(source);
+  const podcastIndex = new PodcastIndexClient();
+  const feedUrl = source.resolutionHints.feedUrl;
+
+  if (!feedUrl) {
+    return null;
+  }
+
+  const show = await podcastIndex.lookupByFeedUrl(feedUrl);
+  if (!show) {
+    return enrichment;
+  }
+
+  enrichment.showTitle = show.title;
+  enrichment.author = show.author;
+  enrichment.artworkUrl = show.image ?? null;
+  enrichment.feedUrl = show.url;
+  enrichment.resolvedVia.push("podcast_index_feed_lookup");
+
+  addMapping(enrichment, "fountain", {
+    showId: String(show.id),
+    showUrl: `https://fountain.fm/show/${show.id}`
+  });
+  addMapping(enrichment, "antennapod", {
+    feedUrl: show.url,
+    showUrl: buildAntennaPodShowUrl(show.url)
+  });
+
+  if (show.itunesId) {
+    const itunesId = String(show.itunesId);
+    addMapping(enrichment, "apple_podcasts", {
+      showId: itunesId,
+      showUrl: `https://podcasts.apple.com/us/podcast/id${itunesId}`
+    });
+    addDeterministicShowMappings(enrichment, itunesId, show.url);
+  }
+
+  return enrichment;
+}
+
 async function resolveUncached(source: NormalizedSourceLink) {
   switch (source.sourceProviderId) {
     case "apple_podcasts":
       return enrichAppleSource(source);
     case "pocket_casts":
       return enrichPocketCastsSource(source);
+    case "castro":
+      return enrichCastroSource(source);
+    case "antennapod":
+      return enrichAntennaPodSource(source);
     default:
       return null;
   }

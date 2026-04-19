@@ -47,17 +47,13 @@ const sampleCatalog: CatalogEntry[] = [
           showId: "daily-fountain-001",
           showUrl: "https://fountain.fm/show/daily-fountain-001"
         }),
-        makeShowMapping("youtube", {
-          playlistId: "PLdailypodcast001",
-          showUrl: "https://www.youtube.com/playlist?list=PLdailypodcast001"
+        makeShowMapping("castro", {
+          showId: "1200361736",
+          showUrl: "https://castro.fm/itunes/1200361736"
         }),
-        makeShowMapping("youtube_music", {
-          playlistId: "PLdailypodcast001",
-          showUrl: "https://music.youtube.com/playlist?list=PLdailypodcast001"
-        }),
-        makeShowMapping("spotify", {
-          showId: "dailyspotifyshow001",
-          showUrl: "https://open.spotify.com/show/dailyspotifyshow001"
+        makeShowMapping("antennapod", {
+          feedUrl: "https://feeds.simplecast.com/54nAGcIl",
+          showUrl: "https://antennapod.org/p/?url=https%253A%252F%252Ffeeds.simplecast.com%252F54nAGcIl"
         })
       ])
     },
@@ -84,17 +80,11 @@ const sampleCatalog: CatalogEntry[] = [
             episodeId: "daily-fountain-episode-001",
             episodeUrl: "https://fountain.fm/episode/daily-fountain-episode-001"
           }),
-          makeShowMapping("youtube", {
-            videoId: "yt-episode-daily-001",
-            episodeUrl: "https://www.youtube.com/watch?v=yt-episode-daily-001"
+          makeShowMapping("castro", {
+            episodeUrl: "https://castro.fm/itunes/1200361736"
           }),
-          makeShowMapping("youtube_music", {
-            videoId: "yt-episode-daily-001",
-            episodeUrl: "https://music.youtube.com/watch?v=yt-episode-daily-001"
-          }),
-          makeShowMapping("spotify", {
-            episodeId: "dailyspotifyepisode001",
-            episodeUrl: "https://open.spotify.com/episode/dailyspotifyepisode001"
+          makeShowMapping("antennapod", {
+            episodeUrl: "https://antennapod.org/p/?url=https%253A%252F%252Ffeeds.simplecast.com%252F54nAGcIl"
           })
         ])
       }

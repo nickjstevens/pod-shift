@@ -39,41 +39,29 @@ const providerDefinitions: ProviderDefinition[] = [
     outputStrategy: "provider_mapping"
   },
   {
-    id: "youtube",
-    displayName: "YouTube",
+    id: "castro",
+    displayName: "Castro",
     launchState: "enabled",
     supportsInput: true,
     supportsOutput: true,
     stableDestination: true,
-    timestampMode: "native",
+    timestampMode: "none",
     contentKinds: ["show", "episode"],
-    normalizationStrategy: "youtube_watch_or_playlist",
-    outputStrategy: "provider_mapping_or_best_effort"
-  },
-  {
-    id: "youtube_music",
-    displayName: "YouTube Music",
-    launchState: "enabled",
-    supportsInput: true,
-    supportsOutput: true,
-    stableDestination: true,
-    timestampMode: "native",
-    contentKinds: ["show", "episode"],
-    normalizationStrategy: "youtube_music_watch_or_playlist",
-    outputStrategy: "provider_mapping_or_best_effort"
-  },
-  {
-    id: "spotify",
-    displayName: "Spotify",
-    launchState: "enabled",
-    supportsInput: true,
-    supportsOutput: true,
-    stableDestination: true,
-    timestampMode: "native",
-    contentKinds: ["show", "episode"],
-    normalizationStrategy: "spotify_show_or_episode",
+    normalizationStrategy: "castro_itunes_or_episode_page",
     outputStrategy: "provider_mapping"
   },
+  {
+    id: "antennapod",
+    displayName: "AntennaPod",
+    launchState: "enabled",
+    supportsInput: true,
+    supportsOutput: true,
+    stableDestination: true,
+    timestampMode: "none",
+    contentKinds: ["show", "episode"],
+    normalizationStrategy: "antennapod_encoded_feed_link",
+    outputStrategy: "provider_mapping"
+  }
 ];
 
 const providerMap = new Map(providerDefinitions.map((provider) => [provider.id, provider]));
