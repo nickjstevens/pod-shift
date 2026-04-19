@@ -18,6 +18,17 @@ type OEmbedPayload = {
   title?: string;
 };
 
+type DiscoverEpisode = {
+  uuid?: string;
+  title?: string;
+  podcastTitle?: string;
+  author?: string;
+};
+
+type DiscoverSearchResponse = {
+  episodes?: DiscoverEpisode[];
+};
+
 function decodeHtml(value: string) {
   return value
     .replaceAll("&amp;", "&")
@@ -80,6 +91,67 @@ function titleFromOEmbed(payload: OEmbedPayload) {
 }
 
 export class PocketCastsClient {
+  async buildEpisodeShortUrlByTitle(episodeTitle: string, podcastTitle?: string): Promise<string | null> {
+    const token = process.env.POCKETCASTS_TOKEN;
+    if (!token) {
+      throw new Error("Pocket Casts configuration error: missing POCKETCASTS_TOKEN environment variable.");
+    }
+
+    const response = await fetch("https://api.pocketcasts.com/discover/search", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
+      },
+      body: JSON.stringify({
+        term: episodeTitle,
+        type: "episodes"
+      }),
+      signal: AbortSignal.timeout(8000)
+    });
+
+    if (response.status === 401) {
+      throw new Error("Pocket Casts token expired (401 Unauthorized). Refresh POCKETCASTS_TOKEN and try again.");
+    }
+
+    if (!response.ok) {
+      throw new Error(`Pocket Casts search failed with ${response.status}`);
+    }
+
+    const payload = (await response.json()) as DiscoverSearchResponse;
+    const episodes = payload.episodes ?? [];
+
+    if (episodes.length === 0) {
+      return null;
+    }
+
+    const normalizedEpisodeTitle = normalizeComparableTitle(episodeTitle);
+    const normalizedPodcastTitle = podcastTitle ? normalizeComparableTitle(podcastTitle) : null;
+    const candidates = normalizedPodcastTitle
+      ? episodes.filter((episode) => {
+          const normalizedResultPodcastTitle = normalizeComparableTitle(episode.podcastTitle ?? "");
+          const normalizedResultAuthor = normalizeComparableTitle(episode.author ?? "");
+
+          return (
+            normalizedResultPodcastTitle.includes(normalizedPodcastTitle) ||
+            normalizedPodcastTitle.includes(normalizedResultPodcastTitle) ||
+            normalizedResultAuthor.includes(normalizedPodcastTitle) ||
+            normalizedPodcastTitle.includes(normalizedResultAuthor)
+          );
+        })
+      : episodes;
+
+    const shortlist = candidates.length > 0 ? candidates : episodes;
+    const exactEpisodeMatch = shortlist.find(
+      (episode) => normalizeComparableTitle(episode.title ?? "") === normalizedEpisodeTitle && episode.uuid
+    );
+    const bestMatch = exactEpisodeMatch ?? shortlist.find((episode) => Boolean(episode.uuid)) ?? null;
+
+    return bestMatch?.uuid ? `https://pca.st/episode/${bestMatch.uuid}` : null;
+  }
+
   async fetchMetadata(inputUrl: string): Promise<PocketCastsMetadata | null> {
     const requestedUrl = (await resolveRedirects(inputUrl)).toString();
     const pageResponse = await fetch(requestedUrl, {

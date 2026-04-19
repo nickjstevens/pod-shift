@@ -40,6 +40,7 @@ function textResponse(payload: string, url?: string) {
 describe("PocketCastsClient", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 
   it("resolves canonical episode metadata and keeps the linked destination hints", async () => {
@@ -108,5 +109,78 @@ describe("PocketCastsClient", () => {
     expect(episodeUrl).toBe(
       "https://pocketcasts.com/podcast/ungovernable-misfits/d7fcbb40-21ae-0138-9fd1-0acc26574db2/privacy-btc-and-xmr-with-riccardo-spagni-freedom-tech-friday-26/pocket-episode-001"
     );
+  });
+
+  it("builds a pca.st episode URL from discover search using episode and podcast title", async () => {
+    vi.stubEnv("POCKETCASTS_TOKEN", "test-token");
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      jsonResponse({
+        episodes: [
+          {
+            uuid: "wrong-episode",
+            title: "Another Episode",
+            podcastTitle: "Different Podcast",
+            author: "Someone Else"
+          },
+          {
+            uuid: "target-episode-uuid",
+            title: "My Episode Title",
+            podcastTitle: "My Podcast",
+            author: "Podcast Host"
+          }
+        ]
+      })
+    );
+
+    const client = new PocketCastsClient();
+    const targetUrl = await client.buildEpisodeShortUrlByTitle("My Episode Title", "My Podcast");
+
+    expect(targetUrl).toBe("https://pca.st/episode/target-episode-uuid");
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      "https://api.pocketcasts.com/discover/search",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          Authorization: "Bearer test-token",
+          "Content-Type": "application/json"
+        }),
+        body: JSON.stringify({
+          term: "My Episode Title",
+          type: "episodes"
+        })
+      })
+    );
+  });
+
+  it("returns null when discover search has no episodes", async () => {
+    vi.stubEnv("POCKETCASTS_TOKEN", "test-token");
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse({ episodes: [] }));
+
+    const client = new PocketCastsClient();
+    await expect(client.buildEpisodeShortUrlByTitle("Unknown Episode")).resolves.toBeNull();
+  });
+
+  it("throws a configuration error when POCKETCASTS_TOKEN is missing", async () => {
+    vi.stubEnv("POCKETCASTS_TOKEN", "");
+
+    const client = new PocketCastsClient();
+    await expect(client.buildEpisodeShortUrlByTitle("Any Episode")).rejects.toThrow(
+      "missing POCKETCASTS_TOKEN"
+    );
+  });
+
+  it("throws a token refresh error when discover search returns 401", async () => {
+    vi.stubEnv("POCKETCASTS_TOKEN", "expired-token");
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ message: "unauthorized" }), {
+        status: 401,
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
+    );
+
+    const client = new PocketCastsClient();
+    await expect(client.buildEpisodeShortUrlByTitle("Any Episode")).rejects.toThrow("token expired");
   });
 });
