@@ -16,8 +16,6 @@ const supportedHosts: Record<string, ProviderId> = {
   "pocketcasts.com": "pocket_casts",
   "fountain.fm": "fountain",
   "open.spotify.com": "spotify",
-  "overcast.fm": "overcast",
-  "castbox.fm": "castbox",
   "www.youtube.com": "youtube",
   "youtube.com": "youtube",
   "youtu.be": "youtube",
@@ -152,71 +150,6 @@ function detectSpotify(url: URL) {
   return detectSimplePathSource("spotify", url, /\/show\/([^/?#]+)/u, /\/episode\/([^/?#]+)/u);
 }
 
-function detectOvercast(url: URL): DetectedSource | null {
-  const episodeMatch = url.pathname.match(/^\/\+([^/?#]+)/u);
-  if (episodeMatch) {
-    return {
-      sourceProviderId: "overcast",
-      contentKind: "episode",
-      providerEntityId: episodeMatch[1],
-      timestampSeconds: readTimestampSeconds(url),
-      resolutionHints: {
-        episodeId: episodeMatch[1],
-        providerPath: url.pathname
-      }
-    };
-  }
-
-  const showMatch = url.pathname.match(/^\/itunes(\d+)/u);
-  if (!showMatch) {
-    return null;
-  }
-
-  return {
-    sourceProviderId: "overcast",
-    contentKind: "show",
-    providerEntityId: showMatch[1],
-    timestampSeconds: readTimestampSeconds(url),
-    resolutionHints: {
-      showId: showMatch[1],
-      providerPath: url.pathname
-    }
-  };
-}
-
-function detectCastbox(url: URL): DetectedSource | null {
-  const episodeMatch =
-    url.pathname.match(/\/episode\/([^/?#]+)/u) ??
-    url.pathname.match(/\/episode\/.*-id([^/?#]+)/u);
-  if (episodeMatch) {
-    return {
-      sourceProviderId: "castbox",
-      contentKind: "episode",
-      providerEntityId: episodeMatch[1],
-      timestampSeconds: readTimestampSeconds(url),
-      resolutionHints: {
-        episodeId: episodeMatch[1],
-        providerPath: url.pathname
-      }
-    };
-  }
-
-  const showMatch = url.pathname.match(/\/channel\/.*-id([^/?#]+)/u) ?? url.pathname.match(/\/channel\/([^/?#]+)/u);
-  if (!showMatch) {
-    return null;
-  }
-
-  return {
-    sourceProviderId: "castbox",
-    contentKind: "show",
-    providerEntityId: showMatch[1],
-    timestampSeconds: readTimestampSeconds(url),
-    resolutionHints: {
-      showId: showMatch[1],
-      providerPath: url.pathname
-    }
-  };
-}
 
 function detectYoutubeLike(providerId: ProviderId, url: URL): DetectedSource | null {
   const videoId = url.hostname === "youtu.be" ? url.pathname.slice(1) : url.searchParams.get("v");
@@ -281,10 +214,6 @@ export function detectSource(url: URL): DetectedSource | null {
       return detectFountain(url);
     case "spotify":
       return detectSpotify(url);
-    case "overcast":
-      return detectOvercast(url);
-    case "castbox":
-      return detectCastbox(url);
     case "youtube":
     case "youtube_music":
       return detectYoutubeLike(providerId, url);

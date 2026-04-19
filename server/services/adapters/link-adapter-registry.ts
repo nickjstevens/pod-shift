@@ -1,9 +1,7 @@
 import type { ProviderId } from "../../../shared/types/provider";
 import { applePodcastsAdapter } from "./apple-podcasts.adapter";
 import type { ProviderLinkAdapter } from "./adapter-types";
-import { castboxAdapter } from "./castbox.adapter";
 import { fountainAdapter } from "./fountain.adapter";
-import { overcastAdapter } from "./overcast.adapter";
 import { pocketCastsAdapter } from "./pocket-casts.adapter";
 import { spotifyAdapter } from "./spotify.adapter";
 import { youtubeAdapter } from "./youtube.adapter";
@@ -13,9 +11,7 @@ const adapters: ProviderLinkAdapter[] = [
   applePodcastsAdapter,
   pocketCastsAdapter,
   fountainAdapter,
-  overcastAdapter,
   spotifyAdapter,
-  castboxAdapter,
   youtubeAdapter,
   youtubeMusicAdapter
 ];

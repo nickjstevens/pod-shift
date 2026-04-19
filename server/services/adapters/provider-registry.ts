@@ -39,18 +39,6 @@ const providerDefinitions: ProviderDefinition[] = [
     outputStrategy: "provider_mapping"
   },
   {
-    id: "overcast",
-    displayName: "Overcast",
-    launchState: "enabled",
-    supportsInput: true,
-    supportsOutput: true,
-    stableDestination: true,
-    timestampMode: "episode_fallback",
-    contentKinds: ["show", "episode"],
-    normalizationStrategy: "overcast_web_link",
-    outputStrategy: "provider_mapping"
-  },
-  {
     id: "youtube",
     displayName: "YouTube",
     launchState: "enabled",
@@ -86,18 +74,6 @@ const providerDefinitions: ProviderDefinition[] = [
     normalizationStrategy: "spotify_show_or_episode",
     outputStrategy: "provider_mapping"
   },
-  {
-    id: "castbox",
-    displayName: "Castbox",
-    launchState: "enabled",
-    supportsInput: true,
-    supportsOutput: true,
-    stableDestination: true,
-    timestampMode: "episode_fallback",
-    contentKinds: ["show", "episode"],
-    normalizationStrategy: "castbox_public_link",
-    outputStrategy: "provider_mapping"
-  }
 ];
 
 const providerMap = new Map(providerDefinitions.map((provider) => [provider.id, provider]));

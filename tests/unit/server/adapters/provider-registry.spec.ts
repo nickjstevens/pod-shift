@@ -25,11 +25,9 @@ describe("provider registry", () => {
       "apple_podcasts",
       "pocket_casts",
       "fountain",
-      "overcast",
       "youtube",
       "youtube_music",
-      "spotify",
-      "castbox"
+      "spotify"
     ]);
   });
 });

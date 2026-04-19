@@ -15,11 +15,9 @@ const providerLabels: Record<ConvertSuccessResponse["targetProvider"], string> =
   apple_podcasts: "Apple Podcasts",
   pocket_casts: "Pocket Casts",
   fountain: "Fountain",
-  overcast: "Overcast",
   youtube: "YouTube",
   youtube_music: "YouTube Music",
-  spotify: "Spotify",
-  castbox: "Castbox"
+  spotify: "Spotify"
 };
 
 const badgeLabel = computed(() => {

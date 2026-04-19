@@ -7,9 +7,7 @@
 - Apple Podcasts
 - Pocket Casts
 - Fountain
-- Overcast
 - Spotify
-- Castbox
 - YouTube
 - YouTube Music
 
