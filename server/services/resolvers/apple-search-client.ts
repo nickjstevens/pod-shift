@@ -119,10 +119,8 @@ function extractProviderLinks(html: string): ProviderLinks {
     ["fountain", /https:\/\/fountain\.fm\/show\/[A-Za-z0-9]+/u],
     ["apple_podcasts", /https:\/\/podcasts\.apple\.com\/[^\s"'<>]+/u],
     ["spotify", /https:\/\/open\.spotify\.com\/show\/[A-Za-z0-9]+/u],
-    ["overcast", /https:\/\/overcast\.fm\/itunes\d+[^\s"'<>]*/u],
     ["youtube", /https:\/\/(?:www\.)?youtube\.com\/[^\s"'<>]+/u],
-    ["youtube_music", /https:\/\/music\.youtube\.com\/[^\s"'<>]+/u],
-    ["castbox", /https:\/\/castbox\.fm\/channel\/[^\s"'<>]+/u]
+    ["youtube_music", /https:\/\/music\.youtube\.com\/[^\s"'<>]+/u]
   ];
 
   for (const [providerId, pattern] of patterns) {

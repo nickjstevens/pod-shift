@@ -47,10 +47,6 @@ const sampleCatalog: CatalogEntry[] = [
           showId: "daily-fountain-001",
           showUrl: "https://fountain.fm/show/daily-fountain-001"
         }),
-        makeShowMapping("overcast", {
-          showId: "1200361736",
-          showUrl: "https://overcast.fm/itunes1200361736/the-daily"
-        }),
         makeShowMapping("youtube", {
           playlistId: "PLdailypodcast001",
           showUrl: "https://www.youtube.com/playlist?list=PLdailypodcast001"
@@ -62,10 +58,6 @@ const sampleCatalog: CatalogEntry[] = [
         makeShowMapping("spotify", {
           showId: "dailyspotifyshow001",
           showUrl: "https://open.spotify.com/show/dailyspotifyshow001"
-        }),
-        makeShowMapping("castbox", {
-          showId: "1200361736",
-          showUrl: "https://castbox.fm/channel/The-Daily-id1200361736"
         })
       ])
     },
@@ -92,10 +84,6 @@ const sampleCatalog: CatalogEntry[] = [
             episodeId: "daily-fountain-episode-001",
             episodeUrl: "https://fountain.fm/episode/daily-fountain-episode-001"
           }),
-          makeShowMapping("overcast", {
-            episodeId: "dailyovercast001",
-            episodeUrl: "https://overcast.fm/+dailyovercast001"
-          }),
           makeShowMapping("youtube", {
             videoId: "yt-episode-daily-001",
             episodeUrl: "https://www.youtube.com/watch?v=yt-episode-daily-001"
@@ -107,10 +95,6 @@ const sampleCatalog: CatalogEntry[] = [
           makeShowMapping("spotify", {
             episodeId: "dailyspotifyepisode001",
             episodeUrl: "https://open.spotify.com/episode/dailyspotifyepisode001"
-          }),
-          makeShowMapping("castbox", {
-            episodeId: "90001",
-            episodeUrl: "https://castbox.fm/episode/inside-the-election-endgame-id90001"
           })
         ])
       }

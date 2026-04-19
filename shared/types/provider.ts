@@ -2,11 +2,9 @@ export const providerIds = [
   "apple_podcasts",
   "pocket_casts",
   "fountain",
-  "overcast",
   "youtube",
   "youtube_music",
-  "spotify",
-  "castbox"
+  "spotify"
 ] as const;
 
 export type ProviderId = (typeof providerIds)[number];
