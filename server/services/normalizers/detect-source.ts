@@ -15,11 +15,8 @@ const supportedHosts: Record<string, ProviderId> = {
   "play.pocketcasts.com": "pocket_casts",
   "pocketcasts.com": "pocket_casts",
   "fountain.fm": "fountain",
-  "open.spotify.com": "spotify",
-  "www.youtube.com": "youtube",
-  "youtube.com": "youtube",
-  "youtu.be": "youtube",
-  "music.youtube.com": "youtube_music"
+  "castro.fm": "castro",
+  "antennapod.org": "antennapod"
 };
 
 function readTimestampSeconds(url: URL) {
@@ -134,6 +131,21 @@ function detectPocketCasts(url: URL): DetectedSource | null {
     };
   }
 
+  if (url.pathname.match(/^\/itunes\/\d+/u)) {
+    const itunesId = url.pathname.match(/^\/itunes\/(\d+)/u)?.[1] ?? null;
+    return {
+      sourceProviderId: "pocket_casts",
+      contentKind: "show",
+      providerEntityId: itunesId,
+      timestampSeconds: readTimestampSeconds(url),
+      resolutionHints: {
+        showId: itunesId ?? undefined,
+        providerPath: url.pathname,
+        canonicalUrl: url.toString()
+      }
+    };
+  }
+
   return detectSimplePathSource(
     "pocket_casts",
     url,
@@ -146,55 +158,68 @@ function detectFountain(url: URL) {
   return detectSimplePathSource("fountain", url, /\/show\/([^/?#]+)/u, /\/episode\/([^/?#]+)/u);
 }
 
-function detectSpotify(url: URL) {
-  return detectSimplePathSource("spotify", url, /\/show\/([^/?#]+)/u, /\/episode\/([^/?#]+)/u);
+function detectCastro(url: URL): DetectedSource | null {
+  const itunesId =
+    url.pathname.match(/^\/itunes\/(\d+)/u)?.[1] ??
+    url.pathname.match(/\/podcast\/[^/]+\/(\d+)/u)?.[1] ??
+    null;
+
+  if (itunesId) {
+    return {
+      sourceProviderId: "castro",
+      contentKind: "show",
+      providerEntityId: itunesId,
+      timestampSeconds: null,
+      resolutionHints: {
+        showId: itunesId,
+        providerPath: url.pathname,
+        canonicalUrl: url.toString()
+      }
+    };
+  }
+
+  if (url.pathname.includes("/episode/")) {
+    return {
+      sourceProviderId: "castro",
+      contentKind: "episode",
+      providerEntityId: url.pathname.split("/").filter(Boolean).at(-1) ?? null,
+      timestampSeconds: null,
+      resolutionHints: {
+        providerPath: url.pathname,
+        canonicalUrl: url.toString()
+      }
+    };
+  }
+
+  return null;
 }
 
-
-function detectYoutubeLike(providerId: ProviderId, url: URL): DetectedSource | null {
-  const videoId = url.hostname === "youtu.be" ? url.pathname.slice(1) : url.searchParams.get("v");
-  const playlistId = url.searchParams.get("list");
-
-  if (videoId) {
-    return {
-      sourceProviderId: providerId,
-      contentKind: "episode",
-      providerEntityId: videoId,
-      timestampSeconds: readTimestampSeconds(url),
-      resolutionHints: {
-        videoId,
-        playlistId: playlistId ?? undefined,
-        providerPath: url.pathname
-      }
-    };
-  }
-
-  if (playlistId) {
-    return {
-      sourceProviderId: providerId,
-      contentKind: "show",
-      providerEntityId: playlistId,
-      timestampSeconds: readTimestampSeconds(url),
-      resolutionHints: {
-        playlistId,
-        providerPath: url.pathname
-      }
-    };
-  }
-
-  const channelMatch = url.pathname.match(/^\/(?:channel\/|@)([^/?#]+)/u);
-  if (!channelMatch) {
+function detectAntennaPod(url: URL): DetectedSource | null {
+  const encodedFeed = url.searchParams.get("url");
+  if (!encodedFeed) {
     return null;
   }
 
+  let feedUrl = encodedFeed;
+  try {
+    feedUrl = decodeURIComponent(decodeURIComponent(encodedFeed));
+  } catch {
+    try {
+      feedUrl = decodeURIComponent(encodedFeed);
+    } catch {
+      feedUrl = encodedFeed;
+    }
+  }
+
   return {
-    sourceProviderId: providerId,
+    sourceProviderId: "antennapod",
     contentKind: "show",
-    providerEntityId: channelMatch[1],
-    timestampSeconds: readTimestampSeconds(url),
+    providerEntityId: feedUrl,
+    timestampSeconds: null,
     resolutionHints: {
-      showId: channelMatch[1],
-      providerPath: url.pathname
+      feedUrl,
+      providerPath: url.pathname,
+      canonicalUrl: url.toString()
     }
   };
 }
@@ -212,11 +237,10 @@ export function detectSource(url: URL): DetectedSource | null {
       return detectPocketCasts(url);
     case "fountain":
       return detectFountain(url);
-    case "spotify":
-      return detectSpotify(url);
-    case "youtube":
-    case "youtube_music":
-      return detectYoutubeLike(providerId, url);
+    case "castro":
+      return detectCastro(url);
+    case "antennapod":
+      return detectAntennaPod(url);
     default:
       return null;
   }

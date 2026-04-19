@@ -2,16 +2,17 @@ import { createHash } from "node:crypto";
 
 import { readRuntimeConfig } from "../../utils/runtime-config";
 
-type PodcastIndexFeed = {
+export type PodcastIndexFeed = {
   id: number;
   title: string;
   author: string;
   url: string;
   image?: string;
   podcastGuid?: string;
+  itunesId?: number;
 };
 
-type PodcastIndexEpisode = {
+export type PodcastIndexEpisode = {
   enclosureUrl?: string;
   feedId?: number;
   id: number;
@@ -19,6 +20,7 @@ type PodcastIndexEpisode = {
   guid?: string;
   datePublishedPretty?: string;
   image?: string;
+  feedItunesId?: number;
 };
 
 type PodcastIndexFeedsResponse = {
@@ -85,6 +87,57 @@ export class PodcastIndexClient {
 
     const payload = (await response.json()) as PodcastIndexFeedsResponse;
     return payload.feeds?.[0] ?? null;
+  }
+
+  async lookupByItunesId(itunesId: string) {
+    if (!this.authHeaders) {
+      return null;
+    }
+
+    const response = await fetch(`${this.baseUrl}/podcasts/byitunesid?id=${encodeURIComponent(itunesId)}`, {
+      headers: this.authHeaders
+    });
+
+    if (!response.ok) {
+      throw new Error(`Podcast Index iTunes lookup failed with ${response.status}`);
+    }
+
+    const payload = (await response.json()) as PodcastIndexFeedsResponse;
+    return payload.feeds?.[0] ?? null;
+  }
+
+  async lookupEpisodeByItunesId(itunesEpisodeId: string) {
+    if (!this.authHeaders) {
+      return null;
+    }
+
+    const response = await fetch(`${this.baseUrl}/episodes/byitunesid?id=${encodeURIComponent(itunesEpisodeId)}`, {
+      headers: this.authHeaders
+    });
+
+    if (!response.ok) {
+      throw new Error(`Podcast Index iTunes episode lookup failed with ${response.status}`);
+    }
+
+    const payload = (await response.json()) as PodcastIndexEpisodesResponse;
+    return payload.items?.[0] ?? null;
+  }
+
+  async lookupEpisodeById(podcastIndexEpisodeId: string) {
+    if (!this.authHeaders) {
+      return null;
+    }
+
+    const response = await fetch(`${this.baseUrl}/episodes/byid?id=${encodeURIComponent(podcastIndexEpisodeId)}`, {
+      headers: this.authHeaders
+    });
+
+    if (!response.ok) {
+      throw new Error(`Podcast Index episode by id lookup failed with ${response.status}`);
+    }
+
+    const payload = (await response.json()) as PodcastIndexEpisodesResponse;
+    return payload.items?.[0] ?? null;
   }
 
   async listEpisodes(feedId: number) {

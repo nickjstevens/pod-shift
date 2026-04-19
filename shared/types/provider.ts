@@ -2,6 +2,8 @@ export const providerIds = [
   "apple_podcasts",
   "pocket_casts",
   "fountain",
+  "castro",
+  "antennapod",
   "youtube",
   "youtube_music",
   "spotify"

@@ -7,9 +7,8 @@
 - Apple Podcasts
 - Pocket Casts
 - Fountain
-- Spotify
-- YouTube
-- YouTube Music
+- Castro
+- AntennaPod
 
 ## What it does
 
@@ -38,6 +37,7 @@ NUXT_PODCAST_INDEX_API_SECRET=your-secret
 POD_SHIFT_USE_MOCK_CATALOG=false
 POD_SHIFT_PROVIDER_ENRICHMENT_CACHE_TTL_MS=300000
 POD_SHIFT_REQUEST_TIMEOUT_MS=8000
+POCKETCASTS_TOKEN=your-pocket-casts-discover-token
 ```
 
 3. Start the app:
@@ -63,6 +63,7 @@ separate database service.
    - `POD_SHIFT_USE_MOCK_CATALOG=false`
    - `POD_SHIFT_PROVIDER_ENRICHMENT_CACHE_TTL_MS=300000`
    - `POD_SHIFT_REQUEST_TIMEOUT_MS=8000`
+   - `POCKETCASTS_TOKEN`
 3. Push a branch and verify the preview deployment converts a supported link and returns explicit failures without any database configuration.
 
 ## Test commands
@@ -78,5 +79,7 @@ npm run test:e2e
 - `NUXT_PODCAST_INDEX_API_KEY`: required for live catalog lookup
 - `NUXT_PODCAST_INDEX_API_SECRET`: required for live catalog lookup
 - `POD_SHIFT_USE_MOCK_CATALOG`: defaults to `false`; set to `true` for seeded local fixtures only
-- `POD_SHIFT_PROVIDER_ENRICHMENT_CACHE_TTL_MS`: optional transient cache TTL for Apple, Pocket Casts, and Fountain enrichment requests
+- `POD_SHIFT_PROVIDER_ENRICHMENT_CACHE_TTL_MS`: optional transient cache TTL for Apple, Pocket Casts, Fountain, Castro, and AntennaPod enrichment requests
 - `POD_SHIFT_REQUEST_TIMEOUT_MS`: optional request timeout override for catalog lookups
+
+- `POCKETCASTS_TOKEN`: bearer token for Pocket Casts Discover API episode UUID lookups
