@@ -11,8 +11,15 @@ describe("/api/providers", () => {
     const response = listProvidersHandler();
 
     expect(response.statusCode).toBe(200);
-    expect(response.body.providers).toHaveLength(8);
+    expect(response.body.providers).toHaveLength(5);
     expect(response.body.providers.every((provider) => provider.supportsOutput)).toBe(true);
+    expect(response.body.providers.map((provider) => provider.id)).toEqual([
+      "apple_podcasts",
+      "pocket_casts",
+      "fountain",
+      "castro",
+      "antennapod"
+    ]);
   });
 
   it("keeps each enabled input provider selectable as an output provider under live defaults", () => {

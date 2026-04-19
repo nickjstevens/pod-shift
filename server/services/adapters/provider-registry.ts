@@ -61,42 +61,6 @@ const providerDefinitions: ProviderDefinition[] = [
     contentKinds: ["show", "episode"],
     normalizationStrategy: "antennapod_encoded_feed_link",
     outputStrategy: "provider_mapping"
-  },
-  {
-    id: "youtube",
-    displayName: "YouTube",
-    launchState: "enabled",
-    supportsInput: true,
-    supportsOutput: true,
-    stableDestination: true,
-    timestampMode: "native",
-    contentKinds: ["show", "episode"],
-    normalizationStrategy: "youtube_watch_or_playlist",
-    outputStrategy: "provider_mapping_or_best_effort"
-  },
-  {
-    id: "youtube_music",
-    displayName: "YouTube Music",
-    launchState: "enabled",
-    supportsInput: true,
-    supportsOutput: true,
-    stableDestination: true,
-    timestampMode: "native",
-    contentKinds: ["show", "episode"],
-    normalizationStrategy: "youtube_music_watch_or_playlist",
-    outputStrategy: "provider_mapping_or_best_effort"
-  },
-  {
-    id: "spotify",
-    displayName: "Spotify",
-    launchState: "enabled",
-    supportsInput: true,
-    supportsOutput: true,
-    stableDestination: true,
-    timestampMode: "native",
-    contentKinds: ["show", "episode"],
-    normalizationStrategy: "spotify_show_or_episode",
-    outputStrategy: "provider_mapping"
   }
 ];
 

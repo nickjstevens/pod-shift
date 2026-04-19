@@ -10,11 +10,9 @@ export const demoLinks = {
     "https://podcasts.apple.com/gb/podcast/ungovernable-misfits/id1491067458?i=1000745595285",
   regressionPocketCastsEpisode:
     "https://pca.st/episode/fcfc426a-a7ce-4374-9a9c-d51451bb06ab",
-  spotifyEpisode:
+  unsupportedSpotifyEpisode:
     "https://open.spotify.com/episode/dailyspotifyepisode001?si=tracking-token&t=95",
-  youtubeEpisode:
-    "https://www.youtube.com/watch?v=yt-episode-daily-001&si=tracking-token&t=95",
-  unknownYoutubeEpisode:
+  unsupportedYoutubeEpisode:
     "https://www.youtube.com/watch?v=yt-episode-unknown-999&si=tracking-token&t=95"
 } as const;
 

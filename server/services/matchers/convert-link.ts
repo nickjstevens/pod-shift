@@ -3,9 +3,7 @@ import type { ProviderId } from "../../../shared/types/provider";
 import { getProviderDefinition } from "../adapters/provider-registry";
 import { getLinkAdapter } from "../adapters/link-adapter-registry";
 import { normalizeInput } from "../normalizers/normalize-input";
-import { meetsConfidenceThreshold } from "./score-match";
 import { resolveCatalogMatch } from "../resolvers/catalog-resolver";
-import { resolveYoutubeBestEffort } from "../resolvers/youtube-matcher";
 import { ApiError } from "../../utils/api-error";
 
 type ConvertLinkInput = {
@@ -63,16 +61,7 @@ export async function convertLink(input: ConvertLinkInput): Promise<ConvertSucce
     throw new ApiError(422, "unsupported_target", "This destination app is not available for direct conversion yet.");
   }
 
-  let resolvedMatch = await resolveCatalogMatch(normalized);
-
-  if (!resolvedMatch && (normalized.sourceProviderId === "youtube" || normalized.sourceProviderId === "youtube_music")) {
-    const bestEffort = await resolveYoutubeBestEffort(normalized);
-    if (!bestEffort.show || !meetsConfidenceThreshold(bestEffort.confidenceScore)) {
-      throw new ApiError(422, "low_confidence_match", "No confident podcast match was found.");
-    }
-
-    resolvedMatch = bestEffort;
-  }
+  const resolvedMatch = await resolveCatalogMatch(normalized);
 
   if (!resolvedMatch) {
     throw new ApiError(422, "unresolved_content", "The app could not match this podcast link to a supported catalog entry.");

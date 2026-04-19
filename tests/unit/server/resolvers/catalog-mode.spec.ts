@@ -6,12 +6,12 @@ import { resetCatalogCache, resolveCatalogMatch } from "../../../../server/servi
 
 const probeSource: NormalizedSourceLink = {
   requestId: "00000000-0000-0000-0000-000000000002",
-  sourceProviderId: "youtube",
+  sourceProviderId: "apple_podcasts",
   originalUrlHash: "hash-probe",
-  normalizedUrl: "https://www.youtube.com/watch?v=totally-unknown-catalog-probe",
+  normalizedUrl: "https://podcasts.apple.com/us/podcast/unlisted-catalog-probe/id1999999999?i=1000999999999",
   contentKind: "episode",
   timestampSeconds: null,
-  providerEntityId: "totally-unknown-catalog-probe",
+  providerEntityId: "1000999999999",
   strippedTrackingKeys: [],
   resolutionHints: {
     titleHint: "Unlisted Catalog Probe"

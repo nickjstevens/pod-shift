@@ -16,10 +16,7 @@ const providerLabels: Record<ConvertSuccessResponse["targetProvider"], string> =
   pocket_casts: "Pocket Casts",
   fountain: "Fountain",
   castro: "Castro",
-  antennapod: "AntennaPod",
-  youtube: "YouTube",
-  youtube_music: "YouTube Music",
-  spotify: "Spotify"
+  antennapod: "AntennaPod"
 };
 
 const badgeLabel = computed(() => {

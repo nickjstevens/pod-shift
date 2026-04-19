@@ -3,7 +3,6 @@ import { listEnabledOutputProviders } from "../adapters/provider-registry";
 import { normalizeInput } from "../normalizers/normalize-input";
 import { resolveCatalogMatch } from "../resolvers/catalog-resolver";
 import { enrichSourceLink } from "../resolvers/provider-enrichment";
-import { resolveYoutubeBestEffort } from "../resolvers/youtube-matcher";
 import { ApiError } from "../../utils/api-error";
 
 type BuildPreviewInput = {
@@ -23,11 +22,7 @@ export async function buildPreview(input: BuildPreviewInput): Promise<PreviewRes
     throw new ApiError(422, "unsupported_source", "This link is not from a supported podcast source.");
   }
 
-  let resolved: Awaited<ReturnType<typeof resolveCatalogMatch>> | Awaited<ReturnType<typeof resolveYoutubeBestEffort>> =
-    await resolveCatalogMatch(normalized);
-  if (!resolved && (normalized.sourceProviderId === "youtube" || normalized.sourceProviderId === "youtube_music")) {
-    resolved = await resolveYoutubeBestEffort(normalized);
-  }
+  const resolved = await resolveCatalogMatch(normalized);
 
   const canUseResolvedPreviewWithoutEnrichment =
     resolved?.matchedBy === "provider_id" &&

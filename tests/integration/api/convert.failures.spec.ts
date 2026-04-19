@@ -39,7 +39,7 @@ describe("/api/convert failures", () => {
     expect(listRuntimeDiagnosticSignals()).toHaveLength(1);
   });
 
-  it("returns a low-confidence failure for ambiguous YouTube inputs", async () => {
+  it("returns an unsupported-source failure for YouTube inputs", async () => {
     const response = await handleConvertRequest({
       inputUrl: "https://www.youtube.com/watch?v=yt-episode-unknown-999&si=tracking-token",
       targetProvider: "pocket_casts",
@@ -47,7 +47,20 @@ describe("/api/convert failures", () => {
     });
 
     expect(response.statusCode).toBe(422);
-    expect(response.body.errorCode).toBe("low_confidence_match");
+    expect(response.body.errorCode).toBe("unsupported_source");
+    expect("feedbackLogged" in response.body).toBe(false);
+    expect(listRuntimeDiagnosticSignals()).toHaveLength(1);
+  });
+
+  it("returns an unsupported-source failure for Spotify inputs", async () => {
+    const response = await handleConvertRequest({
+      inputUrl: "https://open.spotify.com/episode/dailyspotifyepisode001?si=tracking-token&t=95",
+      targetProvider: "pocket_casts",
+      preferTimestamp: true
+    });
+
+    expect(response.statusCode).toBe(422);
+    expect(response.body.errorCode).toBe("unsupported_source");
     expect("feedbackLogged" in response.body).toBe(false);
     expect(listRuntimeDiagnosticSignals()).toHaveLength(1);
   });

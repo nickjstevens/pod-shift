@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { handleConvertRequest } from "../../../server/api/convert.post";
 
-describe("/api/convert provider expansion", () => {
+describe("/api/convert supported destination behavior", () => {
   it("preserves timestamps for target providers with native timestamp support", async () => {
     const response = await handleConvertRequest({
-      inputUrl: "https://open.spotify.com/episode/dailyspotifyepisode001?si=tracking-token&t=95",
-      targetProvider: "youtube_music",
+      inputUrl: "https://podcasts.apple.com/us/podcast/the-daily/id1200361736?i=1000654321001&t=95",
+      targetProvider: "pocket_casts",
       preferTimestamp: true
     });
 
@@ -18,7 +18,7 @@ describe("/api/convert provider expansion", () => {
 
   it("falls back gracefully when the target provider cannot preserve timestamps", async () => {
     const response = await handleConvertRequest({
-      inputUrl: "https://open.spotify.com/episode/dailyspotifyepisode001?si=tracking-token&t=95",
+      inputUrl: "https://podcasts.apple.com/us/podcast/the-daily/id1200361736?i=1000654321001&t=95",
       targetProvider: "fountain",
       preferTimestamp: true
     });

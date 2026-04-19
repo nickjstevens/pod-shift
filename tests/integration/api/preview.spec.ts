@@ -64,17 +64,13 @@ describe("/api/preview", () => {
     expect(response.body.artworkUrl).toContain("the-daily-episode-001");
   });
 
-  it("returns preview metadata with a no-artwork fallback when artwork is unavailable", async () => {
+  it("rejects unsupported source apps that are no longer offered", async () => {
     const response = await handlePreviewRequest({
       inputUrl: "https://www.youtube.com/watch?v=yt-episode-unknown-999&si=tracking-token"
     });
 
-    expect(response.statusCode).toBe(200);
-    expect(response.body.previewLevel).toBe("unresolved");
-    expect(response.body.showTitle).toBeNull();
-    expect(response.body.episodeTitle).toBeNull();
-    expect(response.body.artworkUrl).toBeNull();
-    expect(response.body.warnings[0]).toContain("Artwork preview is not available");
+    expect(response.statusCode).toBe(422);
+    expect(response.body.errorCode).toBe("unsupported_source");
   });
 
   it("returns a malformed-link failure without persistence status leakage", async () => {

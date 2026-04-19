@@ -18,20 +18,23 @@ describe("buildPreview", () => {
     expect(preview.episodeTitle).toBe("Inside the Election Endgame");
     expect(preview.author).toBe("The New York Times");
     expect(preview.artworkUrl).toContain("the-daily-episode-001");
-    expect(preview.availableTargets).toContain("pocket_casts");
+    expect(preview.availableTargets).toEqual([
+      "apple_podcasts",
+      "pocket_casts",
+      "fountain",
+      "castro",
+      "antennapod"
+    ]);
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("returns a complete preview response even when artwork cannot be resolved", async () => {
-    const preview = await buildPreview({
-      inputUrl: "https://www.youtube.com/watch?v=yt-episode-unknown-999&si=tracking-token"
+  it("rejects unsupported source apps that are no longer supported", async () => {
+    await expect(
+      buildPreview({
+        inputUrl: "https://www.youtube.com/watch?v=yt-episode-unknown-999&si=tracking-token"
+      })
+    ).rejects.toMatchObject({
+      errorCode: "unsupported_source"
     });
-
-    expect(preview.sourceProvider).toBe("youtube");
-    expect(preview.previewLevel).toBe("unresolved");
-    expect(preview.showTitle).toBeNull();
-    expect(preview.episodeTitle).toBeNull();
-    expect(preview.artworkUrl).toBeNull();
-    expect(preview.warnings[0]).toContain("Artwork preview is not available");
   });
 });

@@ -18,15 +18,16 @@ describe("runtime diagnostics", () => {
 
     await logFailureFeedback({
       error: new ApiError(422, "unsupported_source", "Unsupported source."),
-      inputUrl: "https://www.youtube.com/watch?v=yt-episode-unknown-999&si=tracking-token",
+      inputUrl:
+        "https://podcasts.apple.com/us/podcast/the-daily/id1200361736?i=1000654321001&utm_source=newsletter",
       targetProviderId: "pocket_casts"
     });
 
     const [diagnostic] = listRuntimeDiagnosticSignals();
     expect(diagnostic.failureClass).toBe("unsupported_source");
-    expect(diagnostic.sourceProviderId).toBe("youtube");
+    expect(diagnostic.sourceProviderId).toBe("apple_podcasts");
     expect(diagnostic.targetProviderId).toBe("pocket_casts");
-    expect(diagnostic.strippedTrackingKeys).toEqual(["si"]);
+    expect(diagnostic.strippedTrackingKeys).toEqual(["utm_source"]);
     expect(diagnostic.normalizedIdentityHash).toHaveLength(64);
     expect(diagnostic.sink).toBe("runtime_log");
   });

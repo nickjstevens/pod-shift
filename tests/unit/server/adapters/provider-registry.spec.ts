@@ -18,7 +18,7 @@ describe("provider registry", () => {
     }
   });
 
-  it("exposes the full enabled launch matrix", () => {
+  it("exposes only the currently supported launch matrix", () => {
     const providerIds = listEnabledOutputProviders().map((provider) => provider.id);
 
     expect(providerIds).toEqual([
@@ -26,10 +26,7 @@ describe("provider registry", () => {
       "pocket_casts",
       "fountain",
       "castro",
-      "antennapod",
-      "youtube",
-      "youtube_music",
-      "spotify"
+      "antennapod"
     ]);
   });
 });
